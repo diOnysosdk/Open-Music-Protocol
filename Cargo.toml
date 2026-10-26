@@ -1,6 +1,7 @@
 [workspace]
 members = ["crates/omp-core", "crates/omp-crypto", "crates/omp-manifest", "crates/omp-cli", "crates/omp-identity", "crates/omp-media", "crates/omp-license", "crates/omp-player"]
 resolver = "2"
+exclude = ["fuzz"]
 
 [workspace.package]
 version = "0.1.0"

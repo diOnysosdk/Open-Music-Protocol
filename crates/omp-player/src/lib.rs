@@ -15,6 +15,8 @@ use omp_license::{
 use omp_media::{
     select_and_verify, AuthenticatedManifest, MediaPolicy, PackageRoot, VerifiedMedia,
 };
+use rodio::Source;
+use std::time::Duration;
 use std::{fs::File, io::Seek};
 use symphonia::core::{
     codecs::DecoderOptions, errors::Error as SymphoniaError, formats::FormatOptions,
@@ -96,7 +98,9 @@ impl AudioSink for LocalAudioSink {
             .map_err(|e| Error::Decoder(format!("audio sink unavailable: {e}")))?;
         let source =
             rodio::Decoder::new(file).map_err(|e| Error::Decoder(format!("audio decoder: {e}")))?;
-        sink.append(source);
+        // Match the default four-hour decoded-frame ceiling. Rodio streams
+        // into CPAL; it does not buffer the complete asset.
+        sink.append(source.take_duration(Duration::from_secs(4 * 60 * 60)));
         sink.sleep_until_end();
         Ok(())
     }
