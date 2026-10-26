@@ -22,8 +22,8 @@
     {"id": "license-at-exclusive-expiry", "evaluation_time": "2026-10-27T00:00:00Z", "expires_at": "2026-10-27T00:00:00Z", "expected_error": "OMP_LICENSE_EXPIRED"},
     {"id": "license-no-trusted-time", "clock_evidence": "none", "expected_error": "OMP_TRUSTED_TIME_UNAVAILABLE"},
     {"id": "metadata-non-nfc", "value": "Cafe\u0301", "expected_error": "OMP_SCHEMA_INVALID"},
-    {"id": "unknown-critical-extension", "critical_extensions": ["https://example.invalid/omp/unknown"], "expected_error": "OMP_UNSUPPORTED_VERSION"},
-    {"id": "unknown-noncritical-extension", "extensions": {"https://example.invalid/omp/unknown": {"value": 1}}, "expected": "VALID_BUT_IGNORED"}
+    {"id": "undeclared-critical-extension-field", "critical_extensions": ["https://example.invalid/omp/unknown"], "expected_error": "OMP_SCHEMA_INVALID", "note": "ADR-012 is deferred; v0.2 schemas are closed."},
+    {"id": "undeclared-extension-field", "extensions": {"https://example.invalid/omp/unknown": {"value": 1}}, "expected_error": "OMP_SCHEMA_INVALID", "note": "ADR-012 is deferred; v0.2 schemas are closed."}
   ]
 }
 

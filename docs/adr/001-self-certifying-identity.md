@@ -1,6 +1,6 @@
 # ADR-001: Self-certifying OMP identities
 
-- Status: Provisionally accepted for normative-draft verification
+- Status: Accepted for `OMP-v0.2-w0-freeze.1`
 - Scope: OMP v0.2 identity bootstrap and identifier generation
 - Compatibility: additive; v0.1 identifiers and signatures are unchanged
 
@@ -181,18 +181,10 @@ self-asserted display name as unique.
 6. The existing v0.1 fixtures remain byte-for-byte verifiable with their
    original domain separator and pinned test key.
 
-## Review record and remaining questions
+## Review record
 
-Items 1–3 below are resolved by the owner decision and exact signing profile.
-Items 4–5 remain open.
-
-1. Approve the `omp:party:sha256-<hex>` profile rather than adopting a
-   standards-track DID as the canonical identifier.
-2. Approve SHA-256 lowercase hex and the exact genesis/domain-separator bytes.
-3. Approve threshold recovery semantics and whether recovery keys must be
-   distinct from ordinary root keys.
-4. Decide the normative timestamp field used to evaluate key validity for
-   each signed object type.
-5. Decide whether identity forks are always fatal or can be surfaced for
-   explicit user resolution in non-rights-critical playback.
+The self-certifying identifier, exact genesis commitment, and threshold
+recovery semantics are frozen. ADR-007 resolves fork handling. The normative
+timestamp used to evaluate time-scoped signing-key authorization still
+requires an explicit cross-object mapping before W4 identity/trust work.
 

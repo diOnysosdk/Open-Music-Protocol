@@ -20,7 +20,7 @@ recorded for every applicable item.
 
 - [ ] Compare Rust semantic validation with every Draft 2020-12 schema.
 - [ ] Review recursive duplicate-key rejection and resource/size limits.
-- [ ] Test version/object/domain confusion and unknown critical extensions.
+- [ ] Test version/object/domain confusion and undeclared extension fields.
 - [ ] Review stable error mapping for information leakage and ambiguity.
 - [ ] Fuzz all untrusted JSON and base64url entry points.
 

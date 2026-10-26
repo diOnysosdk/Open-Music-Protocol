@@ -1,6 +1,6 @@
 # ADR 005: Explicit offline license semantics
 
-- Status: Provisionally accepted for normative-draft verification
+- Status: Accepted for `OMP-v0.2-w0-freeze.1`
 - Scope: OMP v0.2 only
 - Supersedes: no v0.1 behavior
 
@@ -119,9 +119,8 @@ The original v0.1 object remains independently verifiable.
 - Subject-bound licenses expose a stable identifier unless pairwise identities
   are used; privacy guidance is required.
 
-## Remaining review question
+## Review record
 
-Decide whether every subscription license MUST be time-limited. All other
-questions formerly listed here were resolved by the owner decision above and
-the exact profiles in `docs/signing-profiles-v0.2.md`.
+ADR-009 resolves the final question: every subscription license MUST be
+subject-bound and time-limited with an explicit exclusive expiry.
 

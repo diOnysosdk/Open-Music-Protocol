@@ -1,5 +1,5 @@
 {
-  "status": "proposal-only-pending-protocol-owner-approval",
+  "status": "frozen-semantic-cases-OMP-v0.2-w0-freeze.1",
   "schema": "../schemas/identity-document.schema.json",
   "notes": [
     "The base document is a schema and semantic vector, not yet an official cryptographic signature vector.",

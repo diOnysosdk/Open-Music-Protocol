@@ -1,6 +1,6 @@
 # ADR 009: Permanent grants and subscription expiry
 
-- Status: Normative proposal — owner approval required
+- Status: Accepted — protocol owner approved 2026-10-26
 - Scope: v0.2 offline license policy
 - Depends on: ADR-005, ADR-008
 
@@ -43,8 +43,8 @@ is required; migration MUST NOT invent an expiry or permanent entitlement.
 - Exercise both interval boundaries and no trusted time.
 - Verify permanent public playback with no network, clock, or fresh bundle.
 
-## Owner approval required
+## Protocol-owner disposition
 
-Approve mandatory time limitation for every subscription. Safest interoperable
-default: reject a v0.2 subscription that is not explicitly time-limited.
+Approved 2026-10-26. Every v0.2 subscription is explicitly time-limited;
+nonconforming subscription objects are rejected.
 

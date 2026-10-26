@@ -1,6 +1,6 @@
 # ADR 008: Trust freshness and offline verification status
 
-- Status: Normative proposal — owner approval required
+- Status: Accepted — protocol owner approved 2026-10-26
 - Scope: v0.2 offline trust evaluation
 - Depends on: ADR-002, ADR-007
 
@@ -69,10 +69,9 @@ freshness becomes `UNKNOWN`; time-limited decisions fail closed.
   time-limited playback fails.
 - TOFU remains unverified across repeated imports.
 
-## Owner approval required
+## Protocol-owner disposition
 
-Approve stale permanent subject playback. Safest interoperable default is
-allow only previously verified and pinned permanent grants with explicit
-`VALID_STALE`; deployments may be stricter. There is intentionally no global
-freshness duration beyond signed `next_update_at`.
+Approved 2026-10-26. Only previously verified and pinned permanent subject
+grants may use explicit `VALID_STALE`; deployments may be stricter. There is
+no global freshness duration beyond signed `next_update_at`.
 

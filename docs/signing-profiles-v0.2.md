@@ -1,6 +1,6 @@
 # OMP v0.2 signing profiles
 
-**Status:** normative draft approved for cryptographic-vector review.
+**Status:** frozen normative profile for `OMP-v0.2-w0-freeze.1`.
 
 All inputs are duplicate-key-free I-JSON. Canonicalization is RFC 8785 JCS.
 Every domain below is the listed ASCII text followed by exactly one NUL byte

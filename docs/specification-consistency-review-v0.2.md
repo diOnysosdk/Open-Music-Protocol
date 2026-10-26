@@ -1,7 +1,11 @@
 # OMP v0.2 specification consistency review
 
 Date: 2026-10-26  
-Verdict: **cryptographic profile ready for external review; production implementation not yet authorized**.
+Verdict: **superseded by the controlled-implementation readiness review**.
+
+This report records the earlier signing-profile review. The policy decisions,
+fixtures, current blockers, and recommendation are updated in
+`docs/implementation-readiness-report-v0.2.md` and ADRs 007-012.
 
 ## Reviewed sources
 
@@ -66,16 +70,14 @@ Identity commitment uses SHA-256 over `OMP-IDENTITY-GENESIS-v0.2 || 0x00 || JCS(
 
 ## Remaining blockers
 
-1. Package real minimal audio bytes matching signed manifest hashes and test end-to-end binding.
-2. Decide fork behavior for already pinned unrestricted content.
-3. Decide whether trust freshness for subject/time-limited grants has a shared default.
-4. Decide whether every subscription grant must be time-limited.
-5. Publish a deployment profile for time authorities and rollback tolerance.
-6. Decide whether localized metadata is included.
-7. Freeze extension criticality/namespace representation or remove it from normative claims.
-8. Materialize mutation descriptions as immutable negative fixtures and add official RFC 8785 edge vectors.
-9. Obtain external schema, cryptography, Unicode/filesystem, privacy, and threat-model review.
+The former internal blockers were dispositioned on 2026-10-26: ADRs 007-011
+were approved and ADR-012 was deferred with closed schemas. The later W0 audit
+found the pre-existing historical key-validity timestamp mapping still needs
+an owner decision. External assurance remains required before release.
 
 ## Readiness
 
-The cryptographic construction and positive vectors are internally consistent and independently reproduced. Production implementation remains blocked because the items above affect interoperable policy and end-to-end playback. Test-only verification code does not enable v0.2 behavior in any production crate.
+The cryptographic construction and vectors are internally consistent and
+independently reproduced. Controlled implementation is conditional on owner
+approval of ADRs 007-012. Test-only verification code does not enable v0.2
+behavior in any production crate.

@@ -1,6 +1,6 @@
 # ADR-002: Offline key distribution, rotation, and revocation
 
-- Status: Provisionally accepted for normative-draft verification
+- Status: Accepted for `OMP-v0.2-w0-freeze.1`
 - Scope: OMP v0.2 verification without mandatory network access
 - Depends on: ADR-001
 - Compatibility: v0.1 pinned-key verification remains valid and unchanged
@@ -98,7 +98,7 @@ code, and `previous_event_hash`. It is threshold-signed by recovery keys
 authorized in the applicable identity document. Allowed reason codes are
 `superseded`, `compromised`, `lost`, and `retired`.
 
-Proposed semantics:
+Normative semantics:
 
 - `superseded`, `lost`, and `retired` affect objects whose normative signing
   timestamp is at or after `effective_at`.
@@ -195,23 +195,12 @@ the supplied pinned test key.
 8. Verify every existing v0.1 vector with its original signing bytes and an
    explicit legacy key binding.
 
-## Review record and remaining questions
+## Review record
 
-The state vocabulary, historical/current distinction, portable bundles, and
-single-signature media profile are resolved. Timestamp, fork, retrospective
-compromise, freshness, and permanent purchased-license policy remain review
-questions where listed below.
-
-1. Approve the verification-state vocabulary and whether `CONFLICT` is always
-   fatal for every object type.
-2. Approve retrospective `compromised` revocation and the exact semantics of
-   `effective_at` / `compromise_from` boundaries.
-3. Define the normative object timestamp used for historical key validation;
-   a signer-controlled timestamp alone may be insufficient.
-4. Approve whether permanent purchased licenses receive the same stale-trust
-   availability rule as unrestricted/free licenses.
-5. Set default freshness guidance, if any, without making a particular bundle
-   publisher or network service mandatory.
-6. Decide whether multi-signature media objects are in v0.2 or explicitly
-   deferred beyond it.
+ADRs 007-010 resolve conflict, freshness, permanent-license, retrospective
+compromise, and trusted-time behavior. Media objects remain single-signature;
+threshold proofs apply only to identity lifecycle documents. One decision
+remains: the exact normative timestamp field used for historical signing-key
+authorization for each signed object type. A signer-controlled timestamp alone
+may be insufficient; W4 MUST NOT invent this mapping.
 

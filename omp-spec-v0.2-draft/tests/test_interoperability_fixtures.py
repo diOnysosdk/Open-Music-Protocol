@@ -124,7 +124,7 @@ def test_security_case_catalog_covers_required_families():
         "path-symlink-escape", "signature-altered-field", "signature-truncated",
         "signing-key-unknown", "signing-key-revoked-current", "identity-fork",
         "license-at-exclusive-expiry", "license-no-trusted-time", "metadata-non-nfc",
-        "unknown-critical-extension", "unknown-noncritical-extension",
+        "undeclared-critical-extension-field", "undeclared-extension-field",
     }
     assert required <= identifiers
 

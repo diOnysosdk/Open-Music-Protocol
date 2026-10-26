@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://spec.omp.example/v0.2/metadata.schema.json",
-  "title": "OMP descriptive metadata v0.2 draft",
+  "title": "OMP descriptive metadata v0.2",
   "$comment": "Descriptive metadata is an authenticated issuer statement, not evidence of ownership or rights.",
   "type": "object",
   "required": ["title", "artist_credits", "contributors", "role_vocabulary"],

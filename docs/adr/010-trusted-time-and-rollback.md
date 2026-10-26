@@ -1,6 +1,6 @@
 # ADR 010: Trusted-time evidence and clock rollback
 
-- Status: Normative proposal — owner approval required
+- Status: Accepted — protocol owner approved 2026-10-26
 - Scope: v0.2 time-limited offline decisions
 - Depends on: ADR-005 and `time-anchor.schema.json`
 
@@ -55,10 +55,10 @@ of time authorities remain outside core v0.2.
 - Equivalent timestamp offsets normalize to the same instant without changing
   signed bytes.
 
-## Owner approval required
+## Protocol-owner disposition
 
-Approve interval-safe evaluation and zero implicit tolerance. Safest default:
-`configured_clock_uncertainty = 0` only for a platform that explicitly
-guarantees it; otherwise a deployment MUST configure a conservative positive
-uncertainty or reject time-limited playback.
+Approved 2026-10-26. Interval-safe evaluation and zero implicit tolerance are
+normative. `configured_clock_uncertainty = 0` is valid only for a platform that
+explicitly guarantees it; otherwise a deployment MUST configure a conservative
+positive uncertainty or reject time-limited playback.
 

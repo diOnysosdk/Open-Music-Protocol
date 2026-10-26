@@ -1,22 +1,36 @@
 {
-  "profile": "RFC8785-official-edge-subset-1",
+  "profile": "RFC8785-official-appendix-b-1",
   "source": "RFC 8785 Appendix B and Section 3.2.3",
   "notes": "binary64_hex is the exact IEEE-754 input. NaN and infinities are rejection cases because they are not JSON numbers.",
   "numbers": [
-    {"binary64_hex": "0000000000000000", "expected": "0"},
-    {"binary64_hex": "8000000000000000", "expected": "0"},
-    {"binary64_hex": "0000000000000001", "expected": "5e-324"},
-    {"binary64_hex": "8000000000000001", "expected": "-5e-324"},
-    {"binary64_hex": "7fefffffffffffff", "expected": "1.7976931348623157e+308"},
-    {"binary64_hex": "ffefffffffffffff", "expected": "-1.7976931348623157e+308"},
-    {"binary64_hex": "4340000000000000", "expected": "9007199254740992"},
-    {"binary64_hex": "c340000000000000", "expected": "-9007199254740992"},
-    {"binary64_hex": "41b3de4355555555", "expected": "333333333.3333333"},
-    {"binary64_hex": "44b52d02c7e14af6", "expected": "1e+23"}
+    {"binary64_hex":"0000000000000000","expected":"0"},
+    {"binary64_hex":"8000000000000000","expected":"0"},
+    {"binary64_hex":"0000000000000001","expected":"5e-324"},
+    {"binary64_hex":"8000000000000001","expected":"-5e-324"},
+    {"binary64_hex":"7fefffffffffffff","expected":"1.7976931348623157e+308"},
+    {"binary64_hex":"ffefffffffffffff","expected":"-1.7976931348623157e+308"},
+    {"binary64_hex":"4340000000000000","expected":"9007199254740992"},
+    {"binary64_hex":"c340000000000000","expected":"-9007199254740992"},
+    {"binary64_hex":"4430000000000000","expected":"295147905179352830000"},
+    {"binary64_hex":"44b52d02c7e14af5","expected":"9.999999999999997e+22"},
+    {"binary64_hex":"44b52d02c7e14af6","expected":"1e+23"},
+    {"binary64_hex":"44b52d02c7e14af7","expected":"1.0000000000000001e+23"},
+    {"binary64_hex":"444b1ae4d6e2ef4e","expected":"999999999999999700000"},
+    {"binary64_hex":"444b1ae4d6e2ef4f","expected":"999999999999999900000"},
+    {"binary64_hex":"444b1ae4d6e2ef50","expected":"1e+21"},
+    {"binary64_hex":"3eb0c6f7a0b5ed8c","expected":"9.999999999999997e-7"},
+    {"binary64_hex":"3eb0c6f7a0b5ed8d","expected":"0.000001"},
+    {"binary64_hex":"41b3de4355555553","expected":"333333333.3333332"},
+    {"binary64_hex":"41b3de4355555554","expected":"333333333.33333325"},
+    {"binary64_hex":"41b3de4355555555","expected":"333333333.3333333"},
+    {"binary64_hex":"41b3de4355555556","expected":"333333333.3333334"},
+    {"binary64_hex":"41b3de4355555557","expected":"333333333.33333343"},
+    {"binary64_hex":"becbf647612f3696","expected":"-0.0000033333333333333333"},
+    {"binary64_hex":"43143ff3c1cb0959","expected":"1424953923781206.2"}
   ],
-  "reject_binary64_hex": ["7ff0000000000000", "fff0000000000000", "7ff8000000000000"],
+  "reject_binary64_hex": ["7fffffffffffffff","7ff0000000000000","fff0000000000000","7ff8000000000000"],
   "utf16_property_order": {
-    "input_names": ["€", "\r", "ö", "1", "😀", "\u0080"],
-    "expected_names": ["\r", "1", "\u0080", "ö", "€", "😀"]
+    "input_names": ["\u20ac","\r","\ufb33","\u00f6","1","\ud83d\ude00","\u0080"],
+    "expected_names": ["\r","1","\u0080","\u00f6","\u20ac","\ud83d\ude00","\ufb33"]
   }
 }

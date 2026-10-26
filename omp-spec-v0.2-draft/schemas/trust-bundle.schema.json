@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://spec.omp.example/v0.2/trust-bundle.schema.json",
-  "$comment": "PROPOSAL ONLY. Freshness, revocation boundaries, and publisher semantics require protocol-owner approval per ADR-002.",
-  "title": "OMP offline trust bundle v0.2 draft",
+  "$comment": "Frozen for controlled implementation as OMP-v0.2-w0-freeze.1. Freshness and revocation semantics are defined by accepted ADRs.",
+  "title": "OMP offline trust bundle v0.2",
   "type": "object",
   "required": [
     "schema_version",

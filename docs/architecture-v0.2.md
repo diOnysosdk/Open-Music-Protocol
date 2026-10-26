@@ -1,9 +1,8 @@
 # OMP Protocol v0.2 — Identity, Metadata and Offline Playback
 
-**Status:** design proposal for protocol-owner review. This document and the
-draft artifacts are not production protocol specifications. No v0.2 behavior
-may be enabled until the normative text, schemas, vectors, and approval
-decisions below are accepted.
+**Status:** frozen controlled-implementation architecture for
+`OMP-v0.2-w0-freeze.1`. Production release remains prohibited until the
+independent assurance requirements are satisfied.
 
 ## 1. Scope and invariants
 
@@ -18,13 +17,11 @@ The following invariants are non-negotiable:
 1. Every valid v0.1 object remains valid under the unchanged v0.1 validator.
 2. A v0.1 signature is always verified with
    `OMP-SIGNED-OBJECT-v0.1 || 0x00`; its bytes and meaning never change.
-3. A v0.2 media object is a distinct closed wire shape with
-   `schema_version: "0.2"` and is signed with
-   `OMP-SIGNED-OBJECT-v0.2 || 0x00 || JCS(unsigned object)`. Identity and trust
-   lifecycle artifacts use distinct type-specific v0.2 domains to prevent
-   cross-type substitution.
+3. Every v0.2 signed object is a distinct closed wire shape with
+   `schema_version: "0.2"` and its exact type-specific signing domain from
+   `docs/signing-profiles-v0.2.md`. No generic v0.2 signing domain exists.
 4. Dispatch is exact and fail-closed. An unknown version, mixed-version
-   object, unknown critical field, algorithm mismatch, duplicate key, or
+   object, undeclared field, algorithm mismatch, duplicate key, or
    failed signature is rejected; a verifier never retries under another
    version.
 5. Descriptive metadata and identity identifiers are not evidence of
@@ -57,12 +54,9 @@ the top-level `schema_version` for dispatch. It then applies exactly one
 version-specific closed schema, semantic validator, signing domain, and trust
 policy. Version dispatch itself never canonicalizes or mutates the object.
 
-v0.2 extension points use namespaced objects only where explicitly declared
-by schema. An extension name is an absolute URI and its value is authenticated
-as part of the signed object. Unknown non-critical extensions may be retained
-but ignored. A URI listed in `critical_extensions` must be understood or the
-object is rejected. Core fields remain closed; arbitrary top-level properties
-are prohibited.
+OMP v0.2 defines no extension envelope. Every schema is strictly closed and
+every undeclared member, including `extensions` or `critical_extensions`, is
+rejected as `OMP_SCHEMA_INVALID`. ADR-012 is deferred to a future version.
 
 No v0.2 artifact may claim to be a lossless v0.1 object. A migration creates a
 new object with a new identifier, timestamp, v0.2 signature, and an optional
@@ -92,7 +86,7 @@ by the successor key. Emergency recovery and compromise behavior are approval
 items because availability and attacker lockout pull in opposite directions.
 
 The detailed identity and trust decisions live in the ADRs under `docs/adr/`
-and the draft identity schemas.
+and the frozen identity schemas.
 
 ## 5. Metadata model
 
@@ -203,7 +197,7 @@ playback and never enter manifests or licenses.
 
 ## 10. Interoperability suite
 
-The draft vector set must include:
+The frozen vector set includes:
 
 - unchanged acceptance of every v0.1 fixture using the v0.1 domain separator;
 - valid v0.2 manifest, identity genesis/update, trust bundle, unrestricted
@@ -211,7 +205,7 @@ The draft vector set must include:
 - byte-identical JCS and signing payload outputs in Rust and TypeScript,
   including official RFC 8785 numeric and Unicode cases;
 - property-order and whitespace invariance;
-- negative vectors for duplicate keys, unknown critical extensions, mixed
+- negative vectors for duplicate keys, undeclared extension fields, mixed
   version/domain, malformed DIDs, unauthorized rotation, rotation fork and
   rollback, revoked keys, stale bundles, filename traversal/case ambiguity,
   duplicate binding names, wrong size/hash, metadata spoofing, expiry boundary,
@@ -260,40 +254,25 @@ are test-only and must not ship in production binaries.
 
 ## 13. Owner decisions and remaining review blockers
 
-Provisionally resolved: self-certifying OMP identities; exact type-specific
-domains; single-key control with optional threshold recovery and recommended
-2-of-3 recovery; explicit unverified TOFU; historical signature/current-trust
-separation; signed portable trust bundles; strict NFC paths with no symlinks;
-versioned contributor roles; explicit unrestricted public licenses;
-fail-closed time-limited licenses; v0.2 time-anchor structures; and deferral of
-receipts and settlement integration to v0.3.
+All internal W0 protocol decisions are resolved in
+`docs/decision-register-v0.2.md`. ADRs 007-011 are accepted. ADR-012 is
+deferred, so schemas remain closed. The reproducible WAV/FLAC fixtures and
+negative interoperability cases are frozen with the schemas and signing
+vectors.
 
-The remaining blockers before production implementation are:
-
-1. Decide whether identity forks are fatal for unrestricted playback or may
-   be surfaced as `CONFLICT` while preserving access to already pinned public
-   content.
-2. Fix default maximum trust-bundle age for subject-bound/time-limited grants,
-   or declare it application policy with no interoperable default.
-3. Decide whether every subscription license must be time-limited.
-4. Define accepted time-anchor authorities and clock rollback tolerance as a
-   deployment profile; issuance infrastructure remains deferred.
-5. Decide whether localized metadata is deferred or added as another closed,
-   versioned structure.
-6. Freeze extension criticality and namespace rules, which are described but
-   not represented in the current schemas.
-7. Add a real minimal audio fixture matching the signed manifest entries; the
-   current cryptographic vector authenticates the manifest but its illustrative
-   asset hashes are not packaged playback bytes.
-8. Complete external review of the exact schema semantics and threat model.
+No remaining protocol-owner decision blocks controlled W1/W2/W3 work. The
+cross-object timestamp used for historical signing-key authorization must be
+approved before W4 identity/trust implementation. Production release also
+remains blocked on the independent
+cryptographic, schema, identity-state-machine, Unicode/filesystem, privacy,
+legal, supply-chain, and cross-platform assurance listed in
+`docs/external-review-checklist-v0.2.md`.
 
 ## 14. Phased implementation plan
 
 ### Phase 0 — review and freeze
 
-Resolve the remaining blockers above; complete normative prose; validate every
-draft schema; add real tiny audio fixtures; and obtain independent review. No
-production code changes occur in this phase.
+Complete as `OMP-v0.2-w0-freeze.1`. No production code changed in this phase.
 
 ### Phase 1 — versioned parsing and vectors
 

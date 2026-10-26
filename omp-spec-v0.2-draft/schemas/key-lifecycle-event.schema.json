@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://spec.omp.example/v0.2/key-lifecycle-event.schema.json",
-  "$comment": "Normative draft. Cross-field authorization and chain checks remain semantic validation.",
+  "$comment": "Frozen for controlled implementation as OMP-v0.2-w0-freeze.1. Cross-field authorization and chain checks remain semantic validation.",
   "title": "OMP key lifecycle event v0.2",
   "type": "object",
   "required": [

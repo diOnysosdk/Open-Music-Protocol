@@ -4,11 +4,9 @@ Status: proposed execution plan; production Rust remains unchanged.
 
 ## Readiness position
 
-Recommendation: **CONDITIONAL GO for controlled implementation, NO-GO for a
-production release**. Implementation may begin only after the specification
-freeze gate below confirms that the remaining internal policy ADRs, schemas,
-reproducible media fixtures, negative fixtures, and signing profiles agree.
-No workstream may invent wire behavior to satisfy its tests.
+Recommendation: **GO for controlled implementation, NO-GO for a production
+release**. W0 is frozen as `OMP-v0.2-w0-freeze.1`. No workstream may invent
+wire behavior to satisfy its tests.
 
 ## Non-negotiable boundaries
 

@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/omp-core", "crates/omp-crypto", "crates/omp-manifest", "crates/omp-cli"]
+members = ["crates/omp-core", "crates/omp-crypto", "crates/omp-manifest", "crates/omp-cli", "crates/omp-identity"]
 resolver = "2"
 
 [workspace.package]
@@ -18,4 +18,5 @@ serde_jcs = "0.1"
 sha2 = "0.10"
 thiserror = "2"
 time = { version = "0.3", features = ["formatting", "parsing"] }
+unicode-normalization = "0.1"
 

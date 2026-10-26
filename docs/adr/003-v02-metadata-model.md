@@ -1,6 +1,6 @@
 # ADR 003: Structured descriptive metadata in v0.2
 
-- Status: Provisionally accepted for normative-draft verification
+- Status: Accepted for `OMP-v0.2-w0-freeze.1`
 - Date: 2026-10-26
 - Decision owners: OMP protocol owners
 
@@ -77,15 +77,10 @@ remain a valid historical object.
 - Requiring a centrally registered contributor-role vocabulary: conflicts
   with the service-independent protocol goal.
 
-## Review record and remaining questions
+## Review record
 
-Required metadata, NFC rejection, current limits, and the initial versioned
-role vocabulary are selected by the owner decision and draft schema.
-Localized metadata remains open.
-
-1. Whether `metadata` is required for every v0.2 manifest or may be omitted.
-2. Exact string limits and whether NFC is a producer requirement or a hard
-   consumer rejection rule.
-3. The initial recommended contributor-role vocabulary.
-4. Whether localized titles belong in v0.2 or a later extension.
+Resolved by the frozen schemas, contributor-role vocabulary, and ADR-011:
+metadata is required; declared string limits are normative; applicable
+non-NFC strings are rejected; the v0.2 role vocabulary is closed; and v0.2
+has one canonical metadata presentation.
 

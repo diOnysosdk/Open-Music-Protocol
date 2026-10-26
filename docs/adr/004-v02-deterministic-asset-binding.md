@@ -1,6 +1,6 @@
 # ADR 004: Deterministic manifest-to-file binding
 
-- Status: Provisionally accepted for normative-draft verification
+- Status: Accepted for `OMP-v0.2-w0-freeze.1`
 - Date: 2026-10-26
 - Decision owners: OMP protocol owners
 
@@ -85,16 +85,8 @@ without path binding and must not be retroactively changed.
 
 ## Review record
 
-Global selection-rank uniqueness, total symlink rejection, case-sensitive NFC
-paths, and exactly one primary asset are selected by the owner decision and
-draft schema/semantic rules.
-
-1. Whether `selection_rank` must be globally unique or only unique among
-   playable non-preview assets.
-2. Whether symlinks are always prohibited or permitted when their fully
-   resolved target remains beneath the package root.
-3. Whether signed paths should be case-sensitive on all platforms (proposed)
-   or use a restricted lowercase ASCII path profile.
-4. Whether exactly one `primary` asset is required when a manifest contains
-   only previews.
+Resolved by the frozen schema and semantic rules: selection ranks are globally
+unique, all symlink/reparse traversal is rejected, signed paths are
+case-sensitive NFC on every platform, and every manifest has exactly one
+primary asset.
 

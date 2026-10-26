@@ -1,0 +1,71 @@
+{
+  "profile": "OMP-v0.2-historical-authorization-amendment-1",
+  "baseline": "OMP-v0.2-w0-freeze.1",
+  "cases": [
+    {
+      "id": "active-key-public-playback",
+      "input": {"operation":"playback","public_unrestricted":true,"signature":"VALID","content_exact":true,"role_matches":true,"current_status":"ACTIVE","historical_evidence":"NONE","pin":"NONE"},
+      "expected": {"authenticity":"VALID","authorization":"AUTHORIZED_CURRENT","playback":"PLAYBACK_ALLOWED"}
+    },
+    {
+      "id": "pre-compromise-observation-proves-history",
+      "input": {"operation":"inspect","public_unrestricted":true,"signature":"VALID","content_exact":true,"role_matches":true,"current_status":"REVOKED","historical_evidence":"PROVEN_PRE_BOUNDARY","pin":"ELIGIBLE"},
+      "expected": {"authenticity":"VALID","authorization":"AUTHORIZED_HISTORICAL","current_status":"REVOKED"}
+    },
+    {
+      "id": "compromised-key-backdated-created-at",
+      "input": {"operation":"playback","public_unrestricted":true,"signature":"VALID","content_exact":true,"role_matches":true,"current_status":"REVOKED","historical_evidence":"NONE","pin":"ELIGIBLE","claimed_time":"BEFORE_COMPROMISE"},
+      "expected": {"authenticity":"VALID","authorization":"AUTHORIZATION_UNKNOWN","current_status":"REVOKED","playback":"PLAYBACK_DENIED","error":"OMP_KEY_REVOKED"}
+    },
+    {
+      "id": "observation-crosses-compromise-boundary",
+      "input": {"operation":"playback","public_unrestricted":true,"signature":"VALID","content_exact":true,"role_matches":true,"current_status":"REVOKED","historical_evidence":"CROSSES_BOUNDARY","pin":"ELIGIBLE"},
+      "expected": {"authenticity":"VALID","authorization":"AUTHORIZATION_UNKNOWN","current_status":"REVOKED","playback":"PLAYBACK_DENIED","error":"OMP_KEY_REVOKED"}
+    },
+    {
+      "id": "pinned-public-auth-unknown-availability",
+      "input": {"operation":"playback","public_unrestricted":true,"signature":"VALID","content_exact":true,"role_matches":true,"current_status":"UNKNOWN","historical_evidence":"NONE","pin":"ELIGIBLE"},
+      "expected": {"authenticity":"VALID","authorization":"AUTHORIZATION_UNKNOWN","playback":"PLAYBACK_ALLOWED_PINNED_AUTH_UNKNOWN"}
+    },
+    {
+      "id": "tofu-pin-never-qualifies",
+      "input": {"operation":"playback","public_unrestricted":true,"signature":"VALID","content_exact":true,"role_matches":true,"current_status":"UNKNOWN","historical_evidence":"NONE","pin":"TOFU_UNVERIFIED"},
+      "expected": {"authenticity":"VALID","authorization":"AUTHORIZATION_UNKNOWN","playback":"PLAYBACK_DENIED","error":"OMP_IDENTITY_UNVERIFIED"}
+    },
+    {
+      "id": "pin-rollback-denies-exception",
+      "input": {"operation":"playback","public_unrestricted":true,"signature":"VALID","content_exact":true,"role_matches":true,"current_status":"UNKNOWN","historical_evidence":"NONE","pin":"ROLLBACK"},
+      "expected": {"authenticity":"VALID","authorization":"AUTHORIZATION_UNKNOWN","playback":"PLAYBACK_DENIED","error":"OMP_TRUST_ROLLBACK"}
+    },
+    {
+      "id": "altered-content-denies-exception",
+      "input": {"operation":"playback","public_unrestricted":true,"signature":"VALID","content_exact":false,"role_matches":true,"current_status":"UNKNOWN","historical_evidence":"NONE","pin":"ELIGIBLE"},
+      "expected": {"authenticity":"VALID","authorization":"AUTHORIZATION_UNKNOWN","playback":"PLAYBACK_DENIED","error":"OMP_ASSET_BINDING_INVALID"}
+    },
+    {
+      "id": "restricted-license-auth-unknown-fails-closed",
+      "input": {"operation":"playback","public_unrestricted":false,"signature":"VALID","content_exact":true,"role_matches":true,"current_status":"UNKNOWN","historical_evidence":"NONE","pin":"ELIGIBLE"},
+      "expected": {"authenticity":"VALID","authorization":"AUTHORIZATION_UNKNOWN","playback":"PLAYBACK_DENIED","error":"OMP_KEY_UNAUTHORIZED"}
+    },
+    {
+      "id": "publishing-never-uses-playback-exception",
+      "input": {"operation":"publish","public_unrestricted":true,"signature":"VALID","content_exact":true,"role_matches":true,"current_status":"UNKNOWN","historical_evidence":"NONE","pin":"ELIGIBLE"},
+      "expected": {"authenticity":"VALID","authorization":"AUTHORIZATION_UNKNOWN","operation_result":"DENIED","error":"OMP_KEY_UNAUTHORIZED"}
+    },
+    {
+      "id": "missing-time-cannot-prove-history",
+      "input": {"operation":"inspect","public_unrestricted":true,"signature":"VALID","content_exact":true,"role_matches":true,"current_status":"UNKNOWN","historical_evidence":"MISSING_TRUSTED_TIME","pin":"NONE"},
+      "expected": {"authenticity":"VALID","authorization":"AUTHORIZATION_UNKNOWN","error":"OMP_TRUSTED_TIME_UNAVAILABLE"}
+    },
+    {
+      "id": "conflict-remains-adr007-only",
+      "input": {"operation":"playback","public_unrestricted":true,"signature":"VALID","content_exact":true,"role_matches":true,"current_status":"CONFLICT","historical_evidence":"NONE","pin":"ELIGIBLE"},
+      "expected": {"authenticity":"VALID","authorization":"AUTHORIZATION_UNKNOWN","current_status":"CONFLICT","playback":"PLAYBACK_DENIED","error":"OMP_TRUST_CONFLICT"}
+    },
+    {
+      "id": "adr007-conflicted-pinned-with-proven-history",
+      "input": {"operation":"playback","public_unrestricted":true,"signature":"VALID","content_exact":true,"role_matches":true,"current_status":"CONFLICT","historical_evidence":"PROVEN_PRE_BOUNDARY","pin":"ELIGIBLE"},
+      "expected": {"authenticity":"VALID","authorization":"AUTHORIZED_HISTORICAL","current_status":"CONFLICT","playback":"VALID_CONFLICTED_PINNED"}
+    }
+  ]
+}

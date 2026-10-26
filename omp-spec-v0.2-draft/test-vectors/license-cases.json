@@ -1,5 +1,5 @@
 {
-  "status": "proposal-only; signature values are placeholders until the v0.2 signing domain is approved",
+  "status": "frozen semantic cases; placeholder signatures are not cryptographic vectors",
   "cases": [
     {
       "name": "permanent-public-free-offline",
@@ -67,6 +67,13 @@
     {
       "name": "time-limited-without-expiry",
       "inherits": "time-limited-valid-at-lower-bound",
+      "remove": ["expires_at"],
+      "expected_schema_valid": false
+    },
+    {
+      "name": "subscription-cannot-be-permanent",
+      "inherits": "time-limited-valid-at-lower-bound",
+      "patch": { "offline_policy": { "kind": "permanent" } },
       "remove": ["expires_at"],
       "expected_schema_valid": false
     },

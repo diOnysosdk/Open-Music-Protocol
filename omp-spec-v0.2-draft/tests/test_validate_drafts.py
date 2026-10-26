@@ -1,9 +1,10 @@
-"""Structural validation for proposal-only OMP v0.2 draft artifacts."""
+"""Structural validation for frozen OMP v0.2 W0 artifacts."""
 
 import json
 import base64
 import hashlib
 import pathlib
+import copy
 
 from jsonschema import Draft202012Validator, FormatChecker
 from referencing import Registry, Resource
@@ -51,13 +52,22 @@ def test_schemas_and_json_artifacts_are_structurally_valid():
         format_checker=FormatChecker(),
     ).validate(trust_cases["base_bundle"])
 
-    license_cases = load(ROOT / "test-vectors" / "license-cases.json")
-    for case in license_cases["cases"][:2]:
-        Draft202012Validator(
-            schemas["license.schema.json"],
-            registry=registry,
-            format_checker=FormatChecker(),
-        ).validate(case["license"])
+    license_cases = load(ROOT / "test-vectors" / "license-cases.json")["cases"]
+    by_name = {case["name"]: case for case in license_cases}
+    validator = Draft202012Validator(
+        schemas["license.schema.json"], registry=registry, format_checker=FormatChecker()
+    )
+    for case in license_cases:
+        if "expected_schema_valid" not in case:
+            continue
+        if "license" in case:
+            license_object = copy.deepcopy(case["license"])
+        else:
+            license_object = copy.deepcopy(by_name[case["inherits"]]["license"])
+            license_object.update(case.get("patch", {}))
+            for member in case.get("remove", []):
+                license_object.pop(member, None)
+        assert not bool(list(validator.iter_errors(license_object))) == case["expected_schema_valid"]
 
 
 def unb64(value):

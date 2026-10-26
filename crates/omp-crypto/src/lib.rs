@@ -16,6 +16,45 @@ use std::io::{self, Read};
 /// Exact v0.1 signature domain separator, including its trailing NUL.
 pub const SIGNING_PREFIX: &[u8] = b"OMP-SIGNED-OBJECT-v0.1\0";
 
+/// Exact OMP v0.2 signed-object profile.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum V02Profile {
+    /// Manifest signed with the manifest domain.
+    Manifest,
+    /// Identity document signed with the identity-document domain.
+    IdentityDocument,
+    /// Key lifecycle event signed with the lifecycle-event domain.
+    KeyLifecycleEvent,
+    /// License signed with the license domain.
+    License,
+    /// Trust bundle signed with the trust-bundle domain.
+    TrustBundle,
+    /// Time anchor signed with the time-anchor domain.
+    TimeAnchor,
+}
+
+impl V02Profile {
+    fn domain(self) -> &'static [u8] {
+        match self {
+            Self::Manifest => b"OMP-MANIFEST-v0.2\0",
+            Self::IdentityDocument => b"OMP-IDENTITY-DOCUMENT-v0.2\0",
+            Self::KeyLifecycleEvent => b"OMP-KEY-LIFECYCLE-EVENT-v0.2\0",
+            Self::License => b"OMP-LICENSE-v0.2\0",
+            Self::TrustBundle => b"OMP-TRUST-BUNDLE-v0.2\0",
+            Self::TimeAnchor => b"OMP-TIME-ANCHOR-v0.2\0",
+        }
+    }
+
+    /// Exact top-level member excluded from this profile's payload.
+    pub const fn excluded_member(self) -> &'static str {
+        match self {
+            Self::IdentityDocument | Self::KeyLifecycleEvent => "proofs",
+            Self::TrustBundle => "signatures",
+            Self::Manifest | Self::License | Self::TimeAnchor => "signature",
+        }
+    }
+}
+
 /// Cryptographic operation failure.
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -48,6 +87,67 @@ pub fn signing_bytes(unsigned_object: &Value) -> Result<Vec<u8>, Error> {
     output.extend_from_slice(SIGNING_PREFIX);
     output.extend_from_slice(&canonical);
     Ok(output)
+}
+
+/// Construct exact OMP v0.2 signing bytes for one typed profile.
+///
+/// Only the profile's required top-level envelope member is removed. Missing
+/// members and non-object inputs fail; no other profile is attempted.
+pub fn v02_signing_bytes(profile: V02Profile, signed_object: &Value) -> Result<Vec<u8>, Error> {
+    let mut unsigned = signed_object.clone();
+    let object = unsigned
+        .as_object_mut()
+        .ok_or_else(|| Error::Canonicalization("signed value must be an object".into()))?;
+    if object.remove(profile.excluded_member()).is_none() {
+        return Err(Error::Canonicalization(format!(
+            "missing top-level {}",
+            profile.excluded_member()
+        )));
+    }
+    let canonical = canonicalize(&unsigned)?;
+    let mut output = Vec::with_capacity(profile.domain().len() + canonical.len());
+    output.extend_from_slice(profile.domain());
+    output.extend_from_slice(&canonical);
+    Ok(output)
+}
+
+/// Sign an exact OMP v0.2 object profile with Ed25519.
+pub fn sign_v02(
+    profile: V02Profile,
+    signed_object: &Value,
+    key: &SigningKey,
+) -> Result<String, Error> {
+    Ok(encode_base64url(
+        &key.sign(&v02_signing_bytes(profile, signed_object)?)
+            .to_bytes(),
+    ))
+}
+
+/// Verify an exact OMP v0.2 object profile with no domain fallback.
+pub fn verify_v02(
+    profile: V02Profile,
+    signed_object: &Value,
+    signature: &str,
+    key: &VerifyingKey,
+) -> Result<(), Error> {
+    let raw = decode_base64url(signature)?;
+    let signature = Signature::from_slice(&raw).map_err(|_| Error::Length)?;
+    key.verify(&v02_signing_bytes(profile, signed_object)?, &signature)
+        .map_err(|_| Error::InvalidSignature)
+}
+
+/// Derive the frozen self-certifying identity commitment.
+pub fn v02_identity_id<T: Serialize>(genesis_body: &T) -> Result<String, Error> {
+    let canonical = canonicalize(genesis_body)?;
+    let mut hasher = Sha256::new();
+    hasher.update(b"OMP-IDENTITY-GENESIS-v0.2\0");
+    hasher.update(canonical);
+    Ok(format!("omp:party:sha256-{}", hex(&hasher.finalize())))
+}
+
+/// SHA-256 of RFC 8785 canonical bytes for a complete JSON object.
+pub fn canonical_object_sha256<T: Serialize>(object: &T) -> Result<String, Error> {
+    Ok(hex(&Sha256::digest(canonicalize(object)?)))
 }
 
 /// Generate a new Ed25519 signing key using operating-system randomness.

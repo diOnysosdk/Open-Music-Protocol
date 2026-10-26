@@ -1,5 +1,5 @@
 {
-  "suite": "OMP-v0.2-metadata-and-asset-binding-draft",
+  "suite": "OMP-v0.2-w0-freeze.1-metadata-and-asset-binding",
   "status": "proposed-schema-and-semantic-cases-not-cryptographically-final",
   "base_document": "manifest-metadata-multiasset.valid.json",
   "cases": [

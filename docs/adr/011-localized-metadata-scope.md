@@ -1,6 +1,6 @@
 # ADR 011: Localized metadata scope
 
-- Status: Normative proposal — owner approval required
+- Status: Accepted — protocol owner approved 2026-10-26
 - Scope: v0.2 descriptive metadata
 - Depends on: ADR-003
 
@@ -13,7 +13,7 @@ label names, catalog identifiers, and join phrases remain exact signed display
 strings and are not automatically translated.
 
 Localized alternate titles, credit names, transliterations, and sort names are
-deferred to a future closed schema or noncritical extension. Implementations
+deferred to a future protocol version. Implementations
 MUST NOT infer localization from the user's locale, rewrite signed strings, or
 select one of multiple undeclared language variants.
 
@@ -34,8 +34,8 @@ current approved schema.
 - BCP 47 acceptance/rejection, NFC/non-NFC pairs, confusable display strings,
   and proof that UI locale does not change canonical or signing bytes.
 
-## Owner approval required
+## Protocol-owner disposition
 
-Approve deferral of localized alternatives beyond the single canonical v0.2
-presentation. Safest default: no implicit language fallback in core v0.2.
+Approved 2026-10-26. Localized alternatives are deferred beyond the single
+canonical v0.2 presentation. Core v0.2 has no implicit language fallback.
 

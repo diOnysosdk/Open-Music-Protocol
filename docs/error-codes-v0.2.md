@@ -29,3 +29,6 @@ while current trust returns `REVOKED` or `CONFLICT`. APIs MUST expose both and
 must not collapse `OMP_IDENTITY_UNVERIFIED` into verified trust. Legal rights
 and ownership are separate application claims and have no success code here.
 
+The frozen v0.2 schemas are closed. Any undeclared extension member is rejected
+as `OMP_SCHEMA_INVALID`; v0.2 defines no extension-specific error code.
+

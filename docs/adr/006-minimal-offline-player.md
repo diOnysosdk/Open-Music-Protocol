@@ -1,6 +1,6 @@
 # ADR 006: Minimal offline player architecture
 
-- Status: Provisionally accepted for later implementation
+- Status: Accepted architecture; production implementation remains deferred
 - Scope: post-specification implementation; no production player is included
 
 ## Context

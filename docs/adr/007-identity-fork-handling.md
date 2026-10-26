@@ -1,6 +1,6 @@
 # ADR 007: Identity forks and pinned unrestricted playback
 
-- Status: Normative proposal — owner approval required
+- Status: Accepted — protocol owner approved 2026-10-26
 - Scope: v0.2 identity-chain conflicts and offline playback
 - Depends on: ADR-001, ADR-002, ADR-005
 
@@ -78,9 +78,9 @@ licensing, rights claims, updates, or paid access on the conflicted identity.
   content does not.
 - Branch selection is explicit, persisted, and does not delete fork evidence.
 
-## Owner approval required
+## Protocol-owner disposition
 
-Approve the narrow `VALID_CONFLICTED_PINNED` exception. Safest availability-
-preserving default: allow only exact previously pinned unrestricted artifacts;
-fail closed for every new artifact and every non-public entitlement.
+Approved 2026-10-26. The narrow `VALID_CONFLICTED_PINNED` exception is
+normative exactly as specified above. Every new artifact and every non-public
+entitlement still fails closed during an unresolved fork.
 

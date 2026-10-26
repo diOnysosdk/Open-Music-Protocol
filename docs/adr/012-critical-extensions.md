@@ -1,9 +1,9 @@
 # ADR 012: Critical and noncritical extensions
 
-- Status: Normative proposal — owner approval and schema changes required
+- Status: Deferred — protocol owner decision 2026-10-26
 - Scope: v0.2 extensibility
 
-## Proposed normative decision
+## Deferred design (non-normative for v0.2)
 
 Only object schemas that explicitly opt in may contain these top-level signed
 members:
@@ -54,7 +54,9 @@ bounded size/count and core-invariant precedence reduce that risk.
   duplicate identifier, noncanonical URI, oversize/count, tampering, and an
   extension attempting to override a core denial.
 
-## Owner approval required
+## Protocol-owner disposition
 
-Approve adding this extension envelope to the selected v0.2 schemas. Safest
-default before approval: retain closed schemas and reject every extension.
+Deferred 2026-10-26. The extension envelope is not part of OMP v0.2. Every
+v0.2 schema remains strictly closed and every undeclared extension field is
+rejected as `OMP_SCHEMA_INVALID`. The design above is retained only as input
+to a future protocol version and MUST NOT be implemented as v0.2 behavior.

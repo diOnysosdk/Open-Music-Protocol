@@ -1,0 +1,77 @@
+{
+  "baseline": "OMP-v0.2-w0-freeze.1",
+  "classification": "role-authorized-positive",
+  "complete_object_sha256": "9c55de57bcc6d6b358f26a17814d5ffccd057d3066b94eb785bec750330776d4",
+  "expected": {
+    "w3_signature": "VALID",
+    "w4_authorization": "AUTHORIZED_CURRENT"
+  },
+  "profile": "OMP-v0.2-trust-bundle-vector-amendment-1",
+  "signed_object": {
+    "bundle_id": "omp:trust-bundle:media-authorized-amendment-1",
+    "conflicts": [],
+    "created_at": "2026-10-26T13:00:00Z",
+    "identity_documents": [
+      {
+        "genesis_body": {
+          "created_at": "2026-10-26T12:00:00Z",
+          "profile": "omp-self-certifying-identity-v0.2",
+          "recovery": {
+            "key_ids": [
+              "root-01"
+            ],
+            "threshold": 1
+          },
+          "root_keys": [
+            {
+              "algorithm": "Ed25519",
+              "key_id": "root-01",
+              "public_key_base64url": "A5d6xIJWwdtVe8Q0LXcYAFsW63XK29CjIrfz0e4rs6E"
+            }
+          ]
+        },
+        "identity_id": "omp:party:sha256-0021b78094508e06a0ae32f2bb0afb7a53b6a77361782a5e2ab28f87ad8f5bc9",
+        "issued_at": "2026-10-26T12:00:00Z",
+        "operational_keys": [
+          {
+            "algorithm": "Ed25519",
+            "key_id": "media-01",
+            "public_key_base64url": "7_8ksQK9ivb2uxdk8xtuU5Onioiny2kf7DwDOM1Xzs8",
+            "roles": [
+              "manifest",
+              "license",
+              "trust-bundle",
+              "time-anchor"
+            ],
+            "valid_from": "2026-10-26T12:00:00Z"
+          }
+        ],
+        "previous_document_hash": null,
+        "proofs": [
+          {
+            "algorithm": "Ed25519",
+            "key_id": "root-01",
+            "value": "a1MAPwy-Yov8jN55np2-MWkaGA6x_j6AuOe50wf8GrPEIzi7qmnUYIyOeFmDCSjeusiWoSoWnDaJyv2fjAEDDA"
+          }
+        ],
+        "schema_version": "0.2",
+        "sequence": 0
+      }
+    ],
+    "legacy_bindings": [],
+    "lifecycle_events": [],
+    "next_update_at": "2026-11-02T13:00:00Z",
+    "profile": "omp-offline-trust-bundle-v0.2",
+    "provenance": [],
+    "schema_version": "0.2",
+    "signatures": [
+      {
+        "algorithm": "Ed25519",
+        "key_id": "media-01",
+        "value": "jPpMutrcIPYUIHaMIi5xYgUvlu1wa3y-vErXbMm30WG834YG8F5isEvRPQi0QwdSysHfel93qdgKMfOb7yyhBQ"
+      }
+    ]
+  },
+  "signing_payload_base64url": "T01QLVRSVVNULUJVTkRMRS12MC4yAHsiYnVuZGxlX2lkIjoib21wOnRydXN0LWJ1bmRsZTptZWRpYS1hdXRob3JpemVkLWFtZW5kbWVudC0xIiwiY29uZmxpY3RzIjpbXSwiY3JlYXRlZF9hdCI6IjIwMjYtMTAtMjZUMTM6MDA6MDBaIiwiaWRlbnRpdHlfZG9jdW1lbnRzIjpbeyJnZW5lc2lzX2JvZHkiOnsiY3JlYXRlZF9hdCI6IjIwMjYtMTAtMjZUMTI6MDA6MDBaIiwicHJvZmlsZSI6Im9tcC1zZWxmLWNlcnRpZnlpbmctaWRlbnRpdHktdjAuMiIsInJlY292ZXJ5Ijp7ImtleV9pZHMiOlsicm9vdC0wMSJdLCJ0aHJlc2hvbGQiOjF9LCJyb290X2tleXMiOlt7ImFsZ29yaXRobSI6IkVkMjU1MTkiLCJrZXlfaWQiOiJyb290LTAxIiwicHVibGljX2tleV9iYXNlNjR1cmwiOiJBNWQ2eElKV3dkdFZlOFEwTFhjWUFGc1c2M1hLMjlDaklyZnowZTRyczZFIn1dfSwiaWRlbnRpdHlfaWQiOiJvbXA6cGFydHk6c2hhMjU2LTAwMjFiNzgwOTQ1MDhlMDZhMGFlMzJmMmJiMGFmYjdhNTNiNmE3NzM2MTc4MmE1ZTJhYjI4Zjg3YWQ4ZjViYzkiLCJpc3N1ZWRfYXQiOiIyMDI2LTEwLTI2VDEyOjAwOjAwWiIsIm9wZXJhdGlvbmFsX2tleXMiOlt7ImFsZ29yaXRobSI6IkVkMjU1MTkiLCJrZXlfaWQiOiJtZWRpYS0wMSIsInB1YmxpY19rZXlfYmFzZTY0dXJsIjoiN184a3NRSzlpdmIydXhkazh4dHVVNU9uaW9pbnkya2Y3RHdET00xWHpzOCIsInJvbGVzIjpbIm1hbmlmZXN0IiwibGljZW5zZSIsInRydXN0LWJ1bmRsZSIsInRpbWUtYW5jaG9yIl0sInZhbGlkX2Zyb20iOiIyMDI2LTEwLTI2VDEyOjAwOjAwWiJ9XSwicHJldmlvdXNfZG9jdW1lbnRfaGFzaCI6bnVsbCwicHJvb2ZzIjpbeyJhbGdvcml0aG0iOiJFZDI1NTE5Iiwia2V5X2lkIjoicm9vdC0wMSIsInZhbHVlIjoiYTFNQVB3eS1Zb3Y4ak41NW5wMi1NV2thR0E2eF9qNkF1T2U1MHdmOEdyUEVJemk3cW1uVVlJeU9lRm1EQ1NqZXVzaVdvU29XbkRhSnl2MmZqQUVEREEifV0sInNjaGVtYV92ZXJzaW9uIjoiMC4yIiwic2VxdWVuY2UiOjB9XSwibGVnYWN5X2JpbmRpbmdzIjpbXSwibGlmZWN5Y2xlX2V2ZW50cyI6W10sIm5leHRfdXBkYXRlX2F0IjoiMjAyNi0xMS0wMlQxMzowMDowMFoiLCJwcm9maWxlIjoib21wLW9mZmxpbmUtdHJ1c3QtYnVuZGxlLXYwLjIiLCJwcm92ZW5hbmNlIjpbXSwic2NoZW1hX3ZlcnNpb24iOiIwLjIifQ",
+  "signing_payload_sha256": "77b86ceb8472179fa0b1e97d5c191c342f9878f9481c9881b80dce3c2b7c9df9"
+}

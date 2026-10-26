@@ -12,6 +12,9 @@ use std::collections::HashSet;
 use std::fmt;
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
+/// Strict OMP v0.2 wire models and validation.
+pub mod v02;
+
 /// Validation or decoding failure for an OMP object.
 #[derive(Debug, thiserror::Error)]
 pub enum Error {

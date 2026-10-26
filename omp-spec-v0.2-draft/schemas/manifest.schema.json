@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://spec.omp.example/v0.2/manifest.schema.json",
-  "title": "OMP manifest v0.2 draft",
+  "title": "OMP manifest v0.2",
   "$comment": "Normative semantic checks include typed identifiers, portable-path normalization, uniqueness, exactly one primary asset, and track/disc total relationships.",
   "type": "object",
   "required": [

@@ -1,6 +1,7 @@
-# OMP v0.2 proposed architecture decisions
+# OMP v0.2 architecture decisions
 
-These ADRs are design proposals, not accepted protocol decisions:
+ADRs 001-011 are accepted for the frozen v0.2 controlled-implementation
+profile. ADR-012 is explicitly deferred and is not v0.2 protocol behavior.
 
 1. [ADR-001: Self-certifying OMP identities](001-self-certifying-identity.md)
 2. [ADR-002: Offline key lifecycle and trust](002-offline-key-lifecycle-and-trust.md)
@@ -15,6 +16,5 @@ These ADRs are design proposals, not accepted protocol decisions:
 11. [ADR-011: Localized metadata scope](011-localized-metadata-scope.md)
 12. [ADR-012: Critical extensions](012-critical-extensions.md)
 
-Protocol-owner approval items are listed in every ADR and consolidated in
-`docs/architecture-v0.2.md`. Acceptance of one ADR does not implicitly accept
-the others where dependencies or alternatives are still explicit.
+The dated dispositions for the final W0 gate are recorded in
+`docs/decision-register-v0.2.md`.

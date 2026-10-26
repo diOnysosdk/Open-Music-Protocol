@@ -1,0 +1,20 @@
+[package]
+name = "omp-identity"
+description = "OMP v0.2 self-certifying identity and offline trust state machine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+omp-core = { path = "../omp-core" }
+omp-crypto = { path = "../omp-crypto" }
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+time.workspace = true
+
+[dev-dependencies]
+ed25519-dalek.workspace = true
+

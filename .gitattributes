@@ -1,0 +1,12 @@
+docs/*.md text eol=lf
+docs/adr/*.md text eol=lf
+omp-spec-v0.2-draft/*.md text eol=lf
+omp-spec-v0.2-draft/SHA256SUMS text eol=lf
+omp-spec-v0.2-draft/**/*.md text eol=lf
+omp-spec-v0.2-draft/**/*.json text eol=lf
+omp-spec-v0.2-draft/**/*.py text eol=lf
+omp-spec-v0.2-draft/**/*.wav binary
+omp-spec-v0.2-draft/**/*.flac binary
+omp-spec-v0.2-amendments/**/*.md text eol=lf
+omp-spec-v0.2-amendments/**/*.json text eol=lf
+omp-spec-v0.2-amendments/**/*.py text eol=lf
