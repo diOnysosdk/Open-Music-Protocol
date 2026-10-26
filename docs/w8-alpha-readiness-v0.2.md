@@ -10,9 +10,10 @@ on archived green workflow runs.
 Local Windows evidence: frozen hashes pass, 51 Rust tests pass, 22 Python tests
 pass with one documented privilege-dependent skip, formatting/Clippy/docs pass,
 fuzz targets compile, and RustSec reports zero findings across 186 locked
-packages. A bounded libFuzzer run was attempted but could not start because
-only stable Rust is installed and sanitizer fuzzing requires nightly; this is
-an explicit campaign blocker, not a passing result.
+packages. Nightly and cargo-fuzz were installed, but the bounded libFuzzer run
+could not link because the Windows LLVM AddressSanitizer runtime was missing;
+this is an explicit campaign blocker, not a passing result. Two clean Windows
+builds are byte-identical after enabling the MSVC `/Brepro` linker option.
 
 ## Packaging
 

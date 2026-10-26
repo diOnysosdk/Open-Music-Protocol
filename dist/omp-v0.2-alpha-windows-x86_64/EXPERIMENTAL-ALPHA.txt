@@ -1,0 +1,5 @@
+OMP v0.2 - Experimental Alpha / Not Production Ready
+
+This internal, unsigned candidate is not approved for publication or production use.
+Verify SHA256SUMS through an independently authenticated channel before execution.
+See w8-alpha-candidate-report-v0.2.md for limitations and security requirements.

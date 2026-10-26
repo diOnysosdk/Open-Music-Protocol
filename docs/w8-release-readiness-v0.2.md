@@ -3,8 +3,8 @@
 ## Readiness decision
 
 - Controlled development: **GO**.
-- External alpha/release-candidate testing: **CONDITIONAL GO** after both CI
-  platforms pass and RustSec has no unaccepted relevant advisory.
+- External alpha/release-candidate testing: **NO-GO** until both hosted CI
+  platforms and bounded fuzz campaigns produce archived passing evidence.
 - Production release: **NO-GO** pending independent review, production secure
   storage/time adapters, fuzz campaigns, reproducibility, signed artifacts,
   and explicit protocol-owner approval.
@@ -33,7 +33,7 @@ verification is required; no signing was performed in W8.
 
 | Target | Build/test status | Remaining |
 |---|---|---|
-| Windows x86_64 MSVC | Local tests pass | hardware audio, privileged junction, secure-store adapter |
+| Windows x86_64 MSVC | Local tests and two-build reproducibility pass | hosted CI, hardware audio, privileged junction, secure-store adapter |
 | Linux x86_64 GNU | CI configured | first successful run, ALSA/device tests, openat stress |
 | v0.1 | regression suite passes | preserve indefinitely |
 | v0.2 | controlled implementation passes local gates | external interop/security review |
@@ -50,7 +50,7 @@ verification is required; no signing was performed in W8.
 | W5 metadata/media binding | Controlled GO; Linux/privileged Windows assurance pending |
 | W6 licensing/trusted time | Controlled GO; secure clock/store adapters pending |
 | W7 offline player | Controlled GO; hardware matrix pending |
-| W8 assurance/release | Conditional; blockers below remain open |
+| W8 assurance/release | Local assurance only; external alpha and production blocked |
 
 ## Release checklist and remediation order
 

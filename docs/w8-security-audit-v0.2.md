@@ -29,6 +29,13 @@ third-party audit. Frozen baseline: `OMP-v0.2-w0-freeze.1`.
 | W8-06 | Medium | Rodio playback caps duration but uses its streaming decoder path rather than W7's packet counter. | Open, audio security |
 | W8-07 | Low | Deterministic test private seeds are present in fixtures/tests and one generator example. No production module imports them. | Accepted test-only; release scan required |
 | W8-08 | Low | Local pins/identities can be sensitive correlation data. | Privacy documentation and platform encryption/access control required |
+| W8-09 | Medium | GitHub-hosted Windows/Linux CI has not executed for the candidate revision because no authenticated GitHub session was available. | Open, repository owner/release engineering |
+| W8-10 | Medium | Windows sanitizer fuzzing could not link without the LLVM ASan runtime; no bounded campaign statistics exist. | Open, CI/QA; run on supported Linux nightly runner |
+
+Supply-chain evidence generated locally: CycloneDX 1.5 SBOMs for all eight
+crates, zero RustSec findings across 186 locked packages, a 186-package license
+inventory, and a Gitleaks history scan with no findings. These outputs must be
+regenerated and archived by hosted CI for the exact candidate commit.
 
 No production crate contains explicit `unsafe` blocks. No network client or
 telemetry dependency is used by the protocol/player code. Cryptographic
