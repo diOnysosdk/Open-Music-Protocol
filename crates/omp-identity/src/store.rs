@@ -26,8 +26,8 @@ pub struct DurablePin {
     pub identity_id: String,
     /// Signer key.
     pub key_id: String,
-    /// Demonstrated role.
-    pub role: String,
+    /// Demonstrated roles for the pinned manifest and public license.
+    pub roles: BTreeSet<String>,
     /// Genesis hash.
     pub genesis_hash: String,
     /// Accepted identity tip.
@@ -55,7 +55,9 @@ impl DurablePin {
         ) && matches!(
             self.prior_authorization,
             Authorization::AuthorizedCurrent | Authorization::AuthorizedHistorical
-        ) && self.profile == "OMP-v0.2-historical-authorization-amendment-1"
+        ) && self.roles.contains("manifest")
+            && self.roles.contains("license")
+            && self.profile == "OMP-v0.2-historical-authorization-amendment-1"
     }
 }
 

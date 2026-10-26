@@ -102,7 +102,7 @@ fn pin(origin: PinOrigin) -> DurablePin {
         assets: BTreeMap::from([("primary".into(), ("3".repeat(64), 100))]),
         identity_id: format!("omp:party:sha256-{}", "a".repeat(64)),
         key_id: "manifest-key".into(),
-        role: "manifest".into(),
+        roles: ["manifest".into(), "license".into()].into_iter().collect(),
         genesis_hash: "b".repeat(64),
         identity_tip_hash: "c".repeat(64),
         identity_sequence: 0,
@@ -266,6 +266,49 @@ fn tofu_is_not_silently_promoted() {
         next.identity_trust.get("identity"),
         Some(&IdentityTrust::UnverifiedTofu)
     );
+}
+
+impl DurablePinStore for MemoryTrustStore {
+    fn rollback_protection_available(&self) -> bool {
+        true
+    }
+}
+
+#[test]
+fn durable_pin_assessment_is_opaque_exact_and_rejects_tofu() {
+    let identity = document(0, None, "11");
+    let store = MemoryTrustStore::default();
+    let mut exact = pin(PinOrigin::Explicit);
+    exact.identity_tip_hash = identity.complete_hash.clone();
+    exact.identity_id = identity.identity_id.clone();
+    exact.genesis_hash = identity.genesis_hash.clone();
+    update_trust_state(&store, |state| {
+        state
+            .identity_high_water
+            .insert(identity.identity_id.clone(), 0);
+        state.pins.insert("track".into(), exact.clone());
+        Ok(())
+    })
+    .unwrap();
+    let evidence = PinnedArtifactEvidence {
+        pin_id: "track",
+        manifest_hash: &exact.manifest_hash,
+        license_hash: &exact.license_hash,
+        assets: &exact.assets,
+    };
+    let result = assess_durable_pin(&store, &evidence, &identity, &[]).unwrap();
+    assert_eq!(result.authorization(), Authorization::AuthorizationUnknown);
+    assert_eq!(
+        result.playback(),
+        Some(PlaybackDecision::PlaybackAllowedPinnedAuthUnknown)
+    );
+
+    update_trust_state(&store, |state| {
+        state.pins.get_mut("track").unwrap().origin = PinOrigin::TofuUnverified;
+        Ok(())
+    })
+    .unwrap();
+    assert!(assess_durable_pin(&store, &evidence, &identity, &[]).is_err());
 }
 
 #[test]

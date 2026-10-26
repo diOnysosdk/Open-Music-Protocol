@@ -116,6 +116,14 @@ impl ValidatedIdentityDocument {
     pub fn sequence(&self) -> u64 {
         self.sequence
     }
+    /// Complete authenticated document hash.
+    pub fn complete_hash(&self) -> &str {
+        &self.complete_hash
+    }
+    /// Stable authenticated genesis hash.
+    pub fn genesis_hash(&self) -> &str {
+        &self.genesis_hash
+    }
 
     /// Recovery facts required when validating lifecycle objects.
     pub fn recovery(&self) -> &RecoveryPolicyFact {
@@ -260,17 +268,155 @@ pub enum PlaybackDecision {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct VerificationResult {
     /// W3 authenticity result.
-    pub authenticity: Authenticity,
+    authenticity: Authenticity,
     /// W4 role authorization result.
-    pub authorization: Authorization,
+    authorization: Authorization,
     /// Local bootstrap trust.
-    pub identity_trust: IdentityTrust,
+    identity_trust: IdentityTrust,
     /// Current lifecycle state.
-    pub current_status: CurrentStatus,
+    current_status: CurrentStatus,
     /// Evidence freshness.
-    pub freshness: Freshness,
+    freshness: Freshness,
     /// Optional playback decision.
-    pub playback: Option<PlaybackDecision>,
+    playback: Option<PlaybackDecision>,
+}
+
+/// Exact current artifact bindings presented for ADR-013 pin assessment.
+pub struct PinnedArtifactEvidence<'a> {
+    /// Durable pin lookup key.
+    pub pin_id: &'a str,
+    /// Current complete manifest hash.
+    pub manifest_hash: &'a str,
+    /// Current complete public-license hash.
+    pub license_hash: &'a str,
+    /// Current selected asset hashes and sizes.
+    pub assets: &'a BTreeMap<String, (String, u64)>,
+}
+
+/// Platform store capability required for pin availability decisions.
+pub trait DurablePinStore: TrustStateStore {
+    /// True only when this platform provides authenticated, atomic,
+    /// rollback-resistant persistence beyond an ordinary hash chain.
+    fn rollback_protection_available(&self) -> bool;
+}
+
+/// Assess the narrow ADR-013 exception from exact authenticated facts. The
+/// returned result retains `AUTHORIZATION_UNKNOWN`.
+pub fn assess_durable_pin<S: DurablePinStore>(
+    store: &S,
+    evidence: &PinnedArtifactEvidence<'_>,
+    identity: &ValidatedIdentityDocument,
+    lifecycle: &[ValidatedLifecycleEvent],
+) -> Result<VerificationResult, Error> {
+    if !store.rollback_protection_available() {
+        return Err(Error::Integrity("rollback protection unavailable".into()));
+    }
+    let state = store
+        .load()?
+        .ok_or(Error::Integrity("pin state missing".into()))?;
+    let pin = state
+        .pins
+        .get(evidence.pin_id)
+        .ok_or(Error::IdentityUnknown)?;
+    if !pin.eligible_for_auth_unknown_playback()
+        || pin.manifest_hash != evidence.manifest_hash
+        || pin.license_hash != evidence.license_hash
+        || &pin.assets != evidence.assets
+        || pin.identity_id != identity.identity_id
+        || pin.genesis_hash != identity.genesis_hash
+        || pin.identity_tip_hash != identity.complete_hash
+        || pin.identity_sequence != identity.sequence
+        || state.identity_high_water.get(&pin.identity_id).copied() != Some(pin.identity_sequence)
+    {
+        return Err(Error::Integrity("pin evidence mismatch".into()));
+    }
+    if !detect_identity_forks(std::slice::from_ref(identity)).is_empty()
+        || !detect_lifecycle_forks(lifecycle).is_empty()
+    {
+        return Err(Error::TrustConflict);
+    }
+    if current_key_status(&pin.key_id, lifecycle, false) == CurrentStatus::Revoked {
+        return Err(Error::KeyRevoked);
+    }
+    let lifecycle_tip = lifecycle.iter().max_by_key(|event| event.sequence);
+    if pin.lifecycle_sequence != lifecycle_tip.map(|event| event.sequence)
+        || pin.lifecycle_tip_hash.as_deref()
+            != lifecycle_tip.map(|event| event.complete_hash.as_str())
+        || state.lifecycle_high_water.get(&pin.identity_id).copied() != pin.lifecycle_sequence
+    {
+        return Err(Error::TrustRollback);
+    }
+    Ok(VerificationResult {
+        authenticity: Authenticity::Valid,
+        authorization: Authorization::AuthorizationUnknown,
+        identity_trust: IdentityTrust::Verified,
+        current_status: CurrentStatus::Unknown,
+        freshness: Freshness::Unknown,
+        playback: Some(PlaybackDecision::PlaybackAllowedPinnedAuthUnknown),
+    })
+}
+
+impl VerificationResult {
+    /// Cryptographic authenticity axis.
+    pub fn authenticity(&self) -> Authenticity {
+        self.authenticity
+    }
+    /// Role-authorization axis.
+    pub fn authorization(&self) -> Authorization {
+        self.authorization
+    }
+    /// Bootstrap trust axis.
+    pub fn identity_trust(&self) -> IdentityTrust {
+        self.identity_trust
+    }
+    /// Current lifecycle axis.
+    pub fn current_status(&self) -> CurrentStatus {
+        self.current_status
+    }
+    /// Freshness axis.
+    pub fn freshness(&self) -> Freshness {
+        self.freshness
+    }
+    /// Optional W4 playback classification.
+    pub fn playback(&self) -> Option<PlaybackDecision> {
+        self.playback
+    }
+}
+
+/// Assess a signer only from opaque W2/W3-authenticated identity and lifecycle
+/// facts. This is the production provenance boundary consumed by W6/W7.
+#[allow(clippy::too_many_arguments)]
+pub fn assess_signer(
+    identity: &ValidatedIdentityDocument,
+    key_id: &str,
+    required_role: &str,
+    events: &[ValidatedLifecycleEvent],
+    identity_trust: IdentityTrust,
+    freshness: Freshness,
+    historical_evidence: HistoricalEvidence,
+    playback: Option<PlaybackDecision>,
+) -> VerificationResult {
+    let conflicted = !detect_identity_forks(std::slice::from_ref(identity)).is_empty()
+        || !detect_lifecycle_forks(events).is_empty();
+    let status = if !identity.operational_keys.contains_key(key_id) {
+        CurrentStatus::Unknown
+    } else {
+        current_key_status(key_id, events, conflicted)
+    };
+    let authorization = evaluate_authorization(&AuthorizationInput {
+        key: identity.operational_keys.get(key_id),
+        required_role,
+        current_status: status,
+        historical_evidence,
+    });
+    VerificationResult {
+        authenticity: Authenticity::Valid,
+        authorization,
+        identity_trust,
+        current_status: status,
+        freshness,
+        playback,
+    }
 }
 
 /// Adapter boundary that W2/W3 must implement before integrated W4 use.

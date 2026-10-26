@@ -4,7 +4,7 @@ use super::{parse_value, Error, Validate};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
-use time::{format_description::well_known::Rfc3339, OffsetDateTime};
+use time::{format_description::well_known::Rfc3339, Date, Month, OffsetDateTime};
 use unicode_normalization::UnicodeNormalization;
 
 /// Supported exact wire version.
@@ -449,7 +449,7 @@ impl Validate for Manifest {
         let mut primary = 0;
         for asset in &self.assets {
             token(&asset.asset_id, 128)?;
-            portable_path(&asset.relative_path)?;
+            validate_portable_path(&asset.relative_path)?;
             if !ids.insert(&asset.asset_id)
                 || !paths.insert(&asset.relative_path)
                 || !ranks.insert(asset.selection_rank)
@@ -780,17 +780,7 @@ fn metadata(v: &Metadata) -> Result<(), Error> {
         display(x)?;
     }
     if let Some(l) = &v.language {
-        let mut parts = l.split('-');
-        let first = parts.next().unwrap_or_default();
-        if l.len() < 2
-            || l.len() > 63
-            || first.len() < 2
-            || first.len() > 8
-            || !first.bytes().all(|byte| byte.is_ascii_alphabetic())
-            || !parts.all(|p| {
-                !p.is_empty() && p.len() <= 8 && p.bytes().all(|b| b.is_ascii_alphanumeric())
-            })
-        {
+        if !valid_language_tag(l) {
             return invalid("language");
         }
     }
@@ -877,7 +867,7 @@ fn metadata(v: &Metadata) -> Result<(), Error> {
                         byte.is_ascii_digit()
                     }
                 });
-            if !valid {
+            if !valid || !valid_release_date(date) {
                 return invalid("release date");
             }
         }
@@ -895,6 +885,102 @@ fn metadata(v: &Metadata) -> Result<(), Error> {
     }
     Ok(())
 }
+
+fn valid_language_tag(value: &str) -> bool {
+    if value.len() < 2 || value.len() > 63 {
+        return false;
+    }
+    let parts: Vec<_> = value.split('-').collect();
+    let language = parts[0];
+    if !(2..=8).contains(&language.len()) || !language.bytes().all(|b| b.is_ascii_alphabetic()) {
+        return false;
+    }
+    let mut index = 1;
+    if language.len() <= 3 {
+        let mut extlangs = 0;
+        while index < parts.len()
+            && extlangs < 3
+            && parts[index].len() == 3
+            && parts[index].bytes().all(|b| b.is_ascii_alphabetic())
+        {
+            index += 1;
+            extlangs += 1;
+        }
+    }
+    if index < parts.len()
+        && parts[index].len() == 4
+        && parts[index].bytes().all(|b| b.is_ascii_alphabetic())
+    {
+        index += 1;
+    }
+    if index < parts.len()
+        && ((parts[index].len() == 2 && parts[index].bytes().all(|b| b.is_ascii_alphabetic()))
+            || (parts[index].len() == 3 && parts[index].bytes().all(|b| b.is_ascii_digit())))
+    {
+        index += 1;
+    }
+    while index < parts.len()
+        && ((parts[index].len() >= 5 && parts[index].len() <= 8)
+            || (parts[index].len() == 4 && parts[index].as_bytes()[0].is_ascii_digit()))
+        && parts[index].bytes().all(|b| b.is_ascii_alphanumeric())
+    {
+        index += 1;
+    }
+    while index < parts.len() && parts[index].len() == 1 && !parts[index].eq_ignore_ascii_case("x")
+    {
+        if !parts[index].bytes().all(|b| b.is_ascii_alphanumeric()) {
+            return false;
+        }
+        index += 1;
+        let start = index;
+        while index < parts.len()
+            && (2..=8).contains(&parts[index].len())
+            && parts[index].bytes().all(|b| b.is_ascii_alphanumeric())
+        {
+            index += 1;
+        }
+        if index == start {
+            return false;
+        }
+    }
+    if index < parts.len() && parts[index].eq_ignore_ascii_case("x") {
+        index += 1;
+        let start = index;
+        while index < parts.len()
+            && (1..=8).contains(&parts[index].len())
+            && parts[index].bytes().all(|b| b.is_ascii_alphanumeric())
+        {
+            index += 1;
+        }
+        if index == start {
+            return false;
+        }
+    }
+    index == parts.len()
+}
+
+fn valid_release_date(value: &str) -> bool {
+    let Ok(year) = value[..4].parse::<i32>() else {
+        return false;
+    };
+    if value.len() == 4 {
+        return year != 0;
+    }
+    let Ok(month_number) = value[5..7].parse::<u8>() else {
+        return false;
+    };
+    let Ok(month) = Month::try_from(month_number) else {
+        return false;
+    };
+    if value.len() == 7 {
+        return year != 0;
+    }
+    let Ok(day) = value[8..10].parse::<u8>() else {
+        return false;
+    };
+    Date::from_calendar_date(year, month, day).is_ok()
+}
+
 fn operational_key(v: &OperationalKey) -> Result<(), Error> {
     key_id(&v.key_id)?;
     if v.algorithm != "Ed25519" || !base64url(&v.public_key_base64url, Some(43)) {
@@ -949,10 +1035,11 @@ fn proof_value(v: &Proof) -> Result<(), Error> {
     key_id(&v.key_id)?;
     signature(v, true)
 }
-fn portable_path(v: &str) -> Result<(), Error> {
+/// Validate the frozen v0.2 portable package-relative path profile.
+pub fn validate_portable_path(v: &str) -> Result<(), Error> {
     nfc(v)?;
     if v.is_empty()
-        || v.chars().count() > 1024
+        || v.len() > 1024
         || v.starts_with('/')
         || v.contains(['\\', ':', '%'])
         || v.chars().any(|c| c < ' ' || c == '\u{7f}')

@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/omp-core", "crates/omp-crypto", "crates/omp-manifest", "crates/omp-cli", "crates/omp-identity"]
+members = ["crates/omp-core", "crates/omp-crypto", "crates/omp-manifest", "crates/omp-cli", "crates/omp-identity", "crates/omp-media", "crates/omp-license", "crates/omp-player"]
 resolver = "2"
 
 [workspace.package]
@@ -17,6 +17,8 @@ serde_json = "1"
 serde_jcs = "0.1"
 sha2 = "0.10"
 thiserror = "2"
+tempfile = "3"
+symphonia = { version = "0.5", default-features = false, features = ["flac", "wav", "pcm"] }
 time = { version = "0.3", features = ["formatting", "parsing"] }
 unicode-normalization = "0.1"
 

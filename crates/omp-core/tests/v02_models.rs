@@ -89,3 +89,32 @@ fn v01_dispatch_remains_exact() {
     assert!(v02::parse::<v02::Manifest>(&bytes).is_err());
     omp_core::parse_and_validate::<omp_core::Manifest>(&bytes).unwrap();
 }
+
+#[test]
+fn metadata_calendar_language_and_utf8_path_limits_are_semantic() {
+    let base = serde_json::from_slice::<Value>(
+        &std::fs::read(
+            "../../omp-spec-v0.2-draft/test-vectors/manifest-metadata-multiasset.valid.json",
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    let mut language = base.clone();
+    language["metadata"]["language"] = "en-US-u-ca-gregory".into();
+    v02::parse::<v02::Manifest>(&serde_json::to_vec(&language).unwrap()).unwrap();
+
+    let mut invalid_language = base.clone();
+    invalid_language["metadata"]["language"] = "en-u".into();
+    assert!(v02::parse::<v02::Manifest>(&serde_json::to_vec(&invalid_language).unwrap()).is_err());
+
+    let mut invalid_date = base.clone();
+    invalid_date["metadata"]["release"]["release_date"] = "2025-02-29".into();
+    assert!(v02::parse::<v02::Manifest>(&serde_json::to_vec(&invalid_date).unwrap()).is_err());
+
+    let mut oversized_utf8_path = base;
+    oversized_utf8_path["assets"][0]["relative_path"] =
+        format!("audio/{}.flac", "é".repeat(510)).into();
+    assert!(
+        v02::parse::<v02::Manifest>(&serde_json::to_vec(&oversized_utf8_path).unwrap()).is_err()
+    );
+}

@@ -1,0 +1,17 @@
+[package]
+name = "omp-license"
+description = "OMP v0.2 offline licensing and trusted-time engine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+ed25519-dalek.workspace = true
+omp-core = { path = "../omp-core" }
+omp-crypto = { path = "../omp-crypto" }
+omp-identity = { path = "../omp-identity" }
+serde_json.workspace = true
+time.workspace = true
+thiserror.workspace = true
+

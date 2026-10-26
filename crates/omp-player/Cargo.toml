@@ -1,0 +1,20 @@
+[package]
+name = "omp-player"
+description = "Secure offline OMP v0.2 reference playback orchestrator"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+ed25519-dalek.workspace = true
+omp-crypto = { path = "../omp-crypto" }
+omp-identity = { path = "../omp-identity" }
+omp-license = { path = "../omp-license" }
+omp-media = { path = "../omp-media" }
+symphonia.workspace = true
+thiserror.workspace = true
+rodio = { version = "0.20", default-features = false, features = ["symphonia-flac", "symphonia-wav"] }
+
+[dev-dependencies]
+serde_json.workspace = true

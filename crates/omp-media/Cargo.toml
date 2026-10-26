@@ -1,0 +1,20 @@
+[package]
+name = "omp-media"
+description = "OMP v0.2 deterministic media binding and verified handles"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+ed25519-dalek.workspace = true
+omp-core = { path = "../omp-core" }
+omp-crypto = { path = "../omp-crypto" }
+sha2.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tempfile.workspace = true
+
+[target.'cfg(unix)'.dependencies]
+rustix = { version = "1", features = ["fs"] }
+
