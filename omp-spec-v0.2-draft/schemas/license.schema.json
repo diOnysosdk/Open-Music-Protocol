@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openmusicprotocol.org/spec/v0.2/license.schema.json",
+  "title": "OMP license v0.2 draft",
+  "description": "Design proposal; not approved for production use.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "license_id",
+    "recording_id",
+    "audience",
+    "mode",
+    "offline",
+    "offline_policy",
+    "valid_from",
+    "issuer_id",
+    "signature"
+  ],
+  "properties": {
+    "schema_version": { "const": "0.2" },
+    "license_id": { "$ref": "#/$defs/ompId" },
+    "recording_id": { "$ref": "#/$defs/ompId" },
+    "subject_id": {
+      "type": "string",
+      "pattern": "^omp:party:sha256-[0-9a-f]{64}$"
+    },
+    "audience": { "enum": ["public", "subject"] },
+    "mode": { "enum": ["free", "purchase", "subscription"] },
+    "offline": { "type": "boolean" },
+    "offline_policy": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind"],
+          "properties": { "kind": { "const": "permanent" } },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["kind", "clock_requirement"],
+          "properties": {
+            "kind": { "const": "time_limited" },
+            "clock_requirement": { "const": "trusted_time" }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "valid_from": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "issuer_id": { "$ref": "#/$defs/ompId" },
+    "signature": { "$ref": "#/$defs/signature" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "audience": { "const": "public" } }, "required": ["audience"] },
+      "then": {
+        "not": { "required": ["subject_id"] },
+        "properties": {
+          "mode": { "const": "free" },
+          "offline": { "const": true },
+          "offline_policy": {
+            "type": "object",
+            "properties": { "kind": { "const": "permanent" } },
+            "required": ["kind"]
+          }
+        }
+      },
+      "else": { "required": ["subject_id"] }
+    },
+    {
+      "if": {
+        "properties": {
+          "offline_policy": {
+            "properties": { "kind": { "const": "time_limited" } },
+            "required": ["kind"]
+          }
+        },
+        "required": ["offline_policy"]
+      },
+      "then": { "required": ["expires_at"] },
+      "else": { "not": { "required": ["expires_at"] } }
+    }
+  ],
+  "$defs": {
+    "ompId": {
+      "type": "string",
+      "pattern": "^omp:(work|recording|release|party|license|agreement|manifest|receipt|settlement):[a-z0-9][a-z0-9._-]{2,127}$"
+    },
+    "signature": {
+      "type": "object",
+      "required": ["algorithm", "key_id", "value"],
+      "properties": {
+        "algorithm": { "const": "Ed25519" },
+        "key_id": { "type": "string", "minLength": 1 },
+        "value": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
+

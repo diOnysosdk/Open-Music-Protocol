@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec.omp.example/v0.2/identity-document.schema.json",
+  "$comment": "PROPOSAL ONLY. Wire format and cryptographic domains require protocol-owner approval per ADR-001.",
+  "title": "OMP self-certifying identity document v0.2 draft",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "identity_id",
+    "genesis_body",
+    "sequence",
+    "previous_document_hash",
+    "issued_at",
+    "operational_keys",
+    "proofs"
+  ],
+  "properties": {
+    "schema_version": { "const": "0.2" },
+    "identity_id": {
+      "type": "string",
+      "pattern": "^omp:party:sha256-[0-9a-f]{64}$"
+    },
+    "genesis_body": { "$ref": "#/$defs/genesisBody" },
+    "sequence": { "type": "integer", "minimum": 0 },
+    "previous_document_hash": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/sha256" }
+      ]
+    },
+    "issued_at": { "type": "string", "format": "date-time" },
+    "operational_keys": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/operationalKey" },
+      "minItems": 1
+    },
+    "proofs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/proof" },
+      "minItems": 1
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "sequence": { "const": 0 } }, "required": ["sequence"] },
+      "then": { "properties": { "previous_document_hash": { "type": "null" } } },
+      "else": { "properties": { "previous_document_hash": { "$ref": "#/$defs/sha256" } } }
+    }
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "keyId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$"
+    },
+    "publicKey": {
+      "type": "object",
+      "required": ["key_id", "algorithm", "public_key_base64url"],
+      "properties": {
+        "key_id": { "$ref": "#/$defs/keyId" },
+        "algorithm": { "const": "Ed25519" },
+        "public_key_base64url": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{43}$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "genesisBody": {
+      "type": "object",
+      "required": ["profile", "created_at", "root_keys", "recovery"],
+      "properties": {
+        "profile": { "const": "omp-self-certifying-identity-v0.2" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "root_keys": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/publicKey" },
+          "minItems": 1
+        },
+        "recovery": {
+          "type": "object",
+          "required": ["threshold", "key_ids"],
+          "properties": {
+            "threshold": { "type": "integer", "minimum": 1 },
+            "key_ids": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/keyId" },
+              "minItems": 1,
+              "uniqueItems": true
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "operationalKey": {
+      "type": "object",
+      "required": [
+        "key_id",
+        "algorithm",
+        "public_key_base64url",
+        "roles",
+        "valid_from"
+      ],
+      "properties": {
+        "key_id": { "$ref": "#/$defs/keyId" },
+        "algorithm": { "const": "Ed25519" },
+        "public_key_base64url": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{43}$"
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "manifest",
+              "license",
+              "rights",
+              "trust-bundle",
+              "time-anchor",
+              "identity-update"
+            ]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "valid_from": { "type": "string", "format": "date-time" },
+        "valid_until": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": false
+    },
+    "proof": {
+      "type": "object",
+      "required": ["algorithm", "key_id", "value"],
+      "properties": {
+        "algorithm": { "const": "Ed25519" },
+        "key_id": { "$ref": "#/$defs/keyId" },
+        "value": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{86}$"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
+

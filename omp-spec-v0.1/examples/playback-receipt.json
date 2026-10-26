@@ -1,0 +1,19 @@
+{
+  "schema_version": "0.1",
+  "receipt_id": "omp:receipt:receipt-0001",
+  "recording_id": "omp:recording:track-0001",
+  "license_id": "omp:license:license-0001",
+  "agreement_id": "omp:agreement:agreement-0001",
+  "agreement_version": 1,
+  "installation_id": "device-pseudo-01",
+  "session_id": "session-01",
+  "sequence": 0,
+  "previous_hash": null,
+  "started_at": "2026-10-26T10:01:00Z",
+  "duration_ms": 180000,
+  "signature": {
+    "algorithm": "Ed25519",
+    "key_id": "test-key-01",
+    "value": "m7RM-bwUMiHKHPeURpOR6uDxm6cMpt9qo19HUqNkxXPHlx1ApJ5GNF4XMnRQNYOSayV-o9yzBScqdwXx1UHGCg"
+  }
+}

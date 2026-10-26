@@ -1,0 +1,32 @@
+{
+  "schema_version": "0.1",
+  "settlement_id": "omp:settlement:settle-0001",
+  "agreement_id": "omp:agreement:agreement-0001",
+  "agreement_version": 1,
+  "period_start": "2026-10-01T00:00:00Z",
+  "period_end": "2026-11-01T00:00:00Z",
+  "currency": "DKK",
+  "gross_minor": "10000",
+  "deductions_minor": "0",
+  "allocations": [
+    {
+      "party_id": "omp:party:artist-0001",
+      "amount_minor": "8000"
+    },
+    {
+      "party_id": "omp:party:producer-0001",
+      "amount_minor": "1500"
+    },
+    {
+      "party_id": "omp:party:collab-0001",
+      "amount_minor": "500"
+    }
+  ],
+  "receipt_merkle_root": "3b0bd05a648ef41c6876f9adacb801fe0c67c7cb24dd85d9f7be0cd01b82f972",
+  "issuer_id": "omp:party:artist-0001",
+  "signature": {
+    "algorithm": "Ed25519",
+    "key_id": "test-key-01",
+    "value": "-eW0ROVBSJbUgpMAVbgvntcVSe9HTVCeLma-qp6JBdOQRfXJTiCEnq3Doshup-AjsV_FU4IF24R6tn4UMKffAg"
+  }
+}

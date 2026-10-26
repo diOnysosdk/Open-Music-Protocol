@@ -1,0 +1,128 @@
+{
+  "status": "proposal-only-pending-protocol-owner-approval",
+  "schema": "../schemas/identity-document.schema.json",
+  "notes": [
+    "The base document is a schema and semantic vector, not yet an official cryptographic signature vector.",
+    "The identity_id is the lowercase SHA-256 commitment defined by ADR-001 for the included genesis_body.",
+    "The proof value is syntactically valid placeholder data and MUST NOT be treated as a valid Ed25519 signature."
+  ],
+  "base_document": {
+    "schema_version": "0.2",
+    "identity_id": "omp:party:sha256-ae36cc294fcd28645d28df96769b6c55417564f0058050f7a1f84698618abe89",
+    "genesis_body": {
+      "profile": "omp-self-certifying-identity-v0.2",
+      "created_at": "2026-10-26T12:00:00Z",
+      "root_keys": [
+        {
+          "key_id": "root-01",
+          "algorithm": "Ed25519",
+          "public_key_base64url": "A6EHv_POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg"
+        }
+      ],
+      "recovery": {
+        "threshold": 1,
+        "key_ids": ["root-01"]
+      }
+    },
+    "sequence": 0,
+    "previous_document_hash": null,
+    "issued_at": "2026-10-26T12:00:00Z",
+    "operational_keys": [
+      {
+        "key_id": "manifest-01",
+        "algorithm": "Ed25519",
+        "public_key_base64url": "A6EHv_POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg",
+        "roles": ["manifest"],
+        "valid_from": "2026-10-26T12:00:00Z"
+      }
+    ],
+    "proofs": [
+      {
+        "algorithm": "Ed25519",
+        "key_id": "root-01",
+        "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "id": "identity-genesis-schema-valid",
+      "mutation": null,
+      "expected_schema_valid": true,
+      "expected_semantic_valid": true,
+      "expected_crypto_valid": null
+    },
+    {
+      "id": "identity-id-wrong-commitment",
+      "mutation": {
+        "op": "replace",
+        "path": "/identity_id",
+        "value": "omp:party:sha256-0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "expected_schema_valid": true,
+      "expected_semantic_valid": false,
+      "reason": "identity_id does not match the domain-separated JCS genesis commitment"
+    },
+    {
+      "id": "identity-genesis-has-previous-hash",
+      "mutation": {
+        "op": "replace",
+        "path": "/previous_document_hash",
+        "value": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "expected_schema_valid": false,
+      "expected_semantic_valid": false
+    },
+    {
+      "id": "identity-update-missing-previous-hash",
+      "mutations": [
+        { "op": "replace", "path": "/sequence", "value": 1 },
+        { "op": "replace", "path": "/previous_document_hash", "value": null }
+      ],
+      "expected_schema_valid": false,
+      "expected_semantic_valid": false
+    },
+    {
+      "id": "identity-duplicate-recovery-key",
+      "mutation": {
+        "op": "replace",
+        "path": "/genesis_body/recovery/key_ids",
+        "value": ["root-01", "root-01"]
+      },
+      "expected_schema_valid": false,
+      "expected_semantic_valid": false
+    },
+    {
+      "id": "identity-recovery-threshold-exceeds-keys",
+      "mutation": {
+        "op": "replace",
+        "path": "/genesis_body/recovery/threshold",
+        "value": 2
+      },
+      "expected_schema_valid": true,
+      "expected_semantic_valid": false,
+      "reason": "cross-field threshold constraint"
+    },
+    {
+      "id": "identity-key-wrong-role",
+      "mutation": {
+        "op": "replace",
+        "path": "/operational_keys/0/roles/0",
+        "value": "administrator"
+      },
+      "expected_schema_valid": false,
+      "expected_semantic_valid": false
+    },
+    {
+      "id": "identity-padded-key",
+      "mutation": {
+        "op": "replace",
+        "path": "/operational_keys/0/public_key_base64url",
+        "value": "A6EHv_POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg="
+      },
+      "expected_schema_valid": false,
+      "expected_semantic_valid": false
+    }
+  ]
+}
+

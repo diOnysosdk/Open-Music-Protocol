@@ -1,0 +1,36 @@
+{
+  "profile": "OMP-v0.2-audio-fixtures-1",
+  "license": "CC0-1.0",
+  "generator": {
+    "python_wave": "standard-library",
+    "soundfile": "0.14.0",
+    "libsndfile": "1.2.2",
+    "numpy": "2.5.4"
+  },
+  "pcm": {
+    "sample_rate": 8000,
+    "channels": 1,
+    "bits_per_sample": 16,
+    "sample_count": 2000,
+    "duration_ms": 250,
+    "definition": "sample[n] = ((n mod 80) - 40) * 400"
+  },
+  "assets": [
+    {
+      "asset_id": "primary-flac",
+      "relative_path": "audio/omp-triangle-250ms.flac",
+      "media_type": "audio/flac",
+      "sha256": "b7a34c178dc61f86b9e7e542e6c000f1d6f56b8c5b364caef27319b86781d53d",
+      "size_bytes": 2222,
+      "selection_rank": 0
+    },
+    {
+      "asset_id": "alternate-wav",
+      "relative_path": "audio/omp-triangle-250ms.wav",
+      "media_type": "audio/wav",
+      "sha256": "7968796923996897acaa2a734d5f9aa44023c521a5d8eaeda24a04f3e2745a06",
+      "size_bytes": 4044,
+      "selection_rank": 10
+    }
+  ]
+}

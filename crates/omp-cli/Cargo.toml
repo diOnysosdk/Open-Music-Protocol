@@ -1,0 +1,20 @@
+[package]
+name = "omp-cli"
+description = "Offline command-line tools for OMP v0.1 manifests"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "omp"
+path = "src/main.rs"
+
+[dependencies]
+omp-core = { path = "../omp-core" }
+omp-crypto = { path = "../omp-crypto" }
+omp-manifest = { path = "../omp-manifest" }
+serde.workspace = true
+serde_json.workspace = true
+time.workspace = true
+

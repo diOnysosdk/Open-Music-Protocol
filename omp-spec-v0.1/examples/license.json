@@ -1,0 +1,15 @@
+{
+  "schema_version": "0.1",
+  "license_id": "omp:license:license-0001",
+  "recording_id": "omp:recording:track-0001",
+  "subject_id": "omp:party:listener-0001",
+  "mode": "purchase",
+  "offline": true,
+  "valid_from": "2026-10-26T10:00:00Z",
+  "issuer_id": "omp:party:artist-0001",
+  "signature": {
+    "algorithm": "Ed25519",
+    "key_id": "test-key-01",
+    "value": "BCZpY1-b4H6ujZbaFl3ftGUJa5N2_7L6CLxSX2E8WXQQSdCX0gjYqaTW87r4ZPwhz06hL3byb1U6fZwHv-tsBw"
+  }
+}

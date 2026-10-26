@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec.omp.example/v0.2/key-lifecycle-event.schema.json",
+  "$comment": "Normative draft. Cross-field authorization and chain checks remain semantic validation.",
+  "title": "OMP key lifecycle event v0.2",
+  "type": "object",
+  "required": [
+    "schema_version", "event_id", "identity_id", "sequence",
+    "previous_event_hash", "event_type", "effective_at", "issued_at", "proofs"
+  ],
+  "properties": {
+    "schema_version": { "const": "0.2" },
+    "event_id": { "type": "string", "pattern": "^omp:key-event:[a-z0-9][a-z0-9._-]{2,127}$" },
+    "identity_id": { "type": "string", "pattern": "^omp:party:sha256-[0-9a-f]{64}$" },
+    "sequence": { "type": "integer", "minimum": 0 },
+    "previous_event_hash": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      ]
+    },
+    "event_type": { "enum": ["activate", "rotate", "revoke"] },
+    "key_id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$" },
+    "successor_key_id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$" },
+    "reason": { "enum": ["superseded", "compromised", "lost", "retired"] },
+    "compromise_from": { "type": "string", "format": "date-time" },
+    "effective_at": { "type": "string", "format": "date-time" },
+    "issued_at": { "type": "string", "format": "date-time" },
+    "proofs": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/proof" }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "sequence": { "const": 0 } }, "required": ["sequence"] },
+      "then": { "properties": { "previous_event_hash": { "type": "null" } } },
+      "else": { "properties": { "previous_event_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" } } }
+    },
+    {
+      "if": { "properties": { "event_type": { "const": "rotate" } }, "required": ["event_type"] },
+      "then": { "required": ["key_id", "successor_key_id"] }
+    },
+    {
+      "if": { "properties": { "event_type": { "const": "revoke" } }, "required": ["event_type"] },
+      "then": { "required": ["key_id", "reason"] }
+    },
+    {
+      "if": { "required": ["compromise_from"] },
+      "then": { "properties": { "event_type": { "const": "revoke" }, "reason": { "const": "compromised" } } }
+    }
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "proof": {
+      "type": "object",
+      "required": ["algorithm", "key_id", "value"],
+      "properties": {
+        "algorithm": { "const": "Ed25519" },
+        "key_id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$" },
+        "value": { "type": "string", "pattern": "^[A-Za-z0-9_-]{86}$" }
+      },
+      "additionalProperties": false
+    }
+  }
+}
+

@@ -1,0 +1,23 @@
+{
+  "schema_version": "0.1",
+  "manifest_id": "omp:manifest:manifest-0001",
+  "recording_id": "omp:recording:track-0001",
+  "work_id": "omp:work:composition-0001",
+  "issuer_id": "omp:party:artist-0001",
+  "assets": [
+    {
+      "asset_id": "asset-flac-01",
+      "media_type": "audio/flac",
+      "sha256": "3a0de4920bcecac5bddff976f837614a2bca44247e65a2a968f26eba46156848",
+      "size_bytes": 16
+    }
+  ],
+  "agreement_id": "omp:agreement:agreement-0001",
+  "license_id": "omp:license:license-0001",
+  "created_at": "2026-10-26T10:00:00Z",
+  "signature": {
+    "algorithm": "Ed25519",
+    "key_id": "test-key-01",
+    "value": "ouV4kWVNWalFdnP8gjfr2r8Kwhuhmsyt7bAvUmXjr7kWQOA4AGAsjvzvEAdizrktifiLLjqUZGDihR6cZQQUBw"
+  }
+}

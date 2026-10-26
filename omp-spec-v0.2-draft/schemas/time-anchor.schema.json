@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec.omp.example/v0.2/time-anchor.schema.json",
+  "$comment": "Defines portable time evidence; issuance infrastructure and accepted authorities are local policy.",
+  "title": "OMP time anchor v0.2",
+  "type": "object",
+  "required": [
+    "schema_version", "anchor_id", "authority_id", "sequence",
+    "observed_at", "issued_at", "max_age_seconds", "signature"
+  ],
+  "properties": {
+    "schema_version": { "const": "0.2" },
+    "anchor_id": { "type": "string", "pattern": "^omp:time-anchor:[a-z0-9][a-z0-9._-]{2,127}$" },
+    "authority_id": { "type": "string", "pattern": "^omp:party:sha256-[0-9a-f]{64}$" },
+    "sequence": { "type": "integer", "minimum": 0 },
+    "observed_at": { "type": "string", "format": "date-time" },
+    "issued_at": { "type": "string", "format": "date-time" },
+    "max_age_seconds": { "type": "integer", "minimum": 1, "maximum": 31536000 },
+    "previous_anchor_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "signature": { "$ref": "#/$defs/signature" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "signature": {
+      "type": "object",
+      "required": ["algorithm", "key_id", "value"],
+      "properties": {
+        "algorithm": { "const": "Ed25519" },
+        "key_id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$" },
+        "value": { "type": "string", "pattern": "^[A-Za-z0-9_-]{86}$" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "schema_version": "0.2",
+  "manifest_id": "omp:manifest:manifest-v02-0001",
+  "recording_id": "omp:recording:track-v02-0001",
+  "work_id": "omp:work:composition-v02-0001",
+  "release_id": "omp:release:release-v02-0001",
+  "issuer_id": "omp:party:sha256-1111111111111111111111111111111111111111111111111111111111111111",
+  "metadata": {
+    "title": "Northern Lights",
+    "version_label": "Studio Version",
+    "language": "en",
+    "role_vocabulary": "omp-contributor-roles-v0.2",
+    "artist_credits": [
+      {
+        "display_name": "Example Artist",
+        "identity": "omp:party:sha256-1111111111111111111111111111111111111111111111111111111111111111",
+        "join_phrase": " feat. "
+      },
+      {
+        "display_name": "Guest Artist"
+      }
+    ],
+    "contributors": [
+      {
+        "credit_id": "example-artist",
+        "display_name": "Example Artist",
+        "identity": "omp:party:sha256-1111111111111111111111111111111111111111111111111111111111111111",
+        "roles": ["composer", "performer"],
+        "instrument": "Piano"
+      },
+      {
+        "credit_id": "guest-artist",
+        "display_name": "Guest Artist",
+        "roles": ["featured_artist", "vocalist"]
+      }
+    ],
+    "release": {
+      "release_id": "omp:release:release-v02-0001",
+      "title": "Northern Lights",
+      "release_type": "single",
+      "release_date": "2026-10-26",
+      "label_name": "Independent",
+      "catalog_number": "OMP-DEMO-0001",
+      "track_number": 1,
+      "track_total": 1,
+      "disc_number": 1,
+      "disc_total": 1
+    }
+  },
+  "assets": [
+    {
+      "asset_id": "primary-flac",
+      "relative_path": "fixtures/audio/omp-triangle-250ms.flac",
+      "role": "primary",
+      "selection_rank": 0,
+      "media_type": "audio/flac",
+      "sha256": "b7a34c178dc61f86b9e7e542e6c000f1d6f56b8c5b364caef27319b86781d53d",
+      "size_bytes": 2222
+    },
+    {
+      "asset_id": "alternate-wav",
+      "relative_path": "fixtures/audio/omp-triangle-250ms.wav",
+      "role": "alternate",
+      "selection_rank": 10,
+      "media_type": "audio/wav",
+      "sha256": "7968796923996897acaa2a734d5f9aa44023c521a5d8eaeda24a04f3e2745a06",
+      "size_bytes": 4044
+    }
+  ],
+  "agreement_id": "omp:agreement:agreement-v02-0001",
+  "license_id": "omp:license:license-v02-0001",
+  "created_at": "2026-10-26T12:00:00+01:00",
+  "signature": {
+    "algorithm": "Ed25519",
+    "key_id": "manifest-01",
+    "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "schema_version": "0.1",
+  "agreement_id": "omp:agreement:agreement-0001",
+  "version": 1,
+  "recording_id": "omp:recording:track-0001",
+  "effective_from": "2026-10-26T10:00:00Z",
+  "currency": "DKK",
+  "allocation_pool": "master_net_receipts",
+  "splits": [
+    {
+      "party_id": "omp:party:artist-0001",
+      "basis_points": 8000
+    },
+    {
+      "party_id": "omp:party:producer-0001",
+      "basis_points": 1500
+    },
+    {
+      "party_id": "omp:party:collab-0001",
+      "basis_points": 500
+    }
+  ],
+  "issuer_id": "omp:party:artist-0001",
+  "signature": {
+    "algorithm": "Ed25519",
+    "key_id": "test-key-01",
+    "value": "zmyKsXDh3RHaR18MW9fw7gIerePMTofc_oxjYWRPSn3ByhF_RFir171oJRbbQm8Pb8KObEfcg9N3uUFvxq2cDA"
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec.omp.example/v0.1/manifest.schema.json",
+  "title": "OMP manifest v0.1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "manifest_id",
+    "recording_id",
+    "work_id",
+    "issuer_id",
+    "assets",
+    "agreement_id",
+    "license_id",
+    "created_at",
+    "signature"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.1"
+    },
+    "manifest_id": {
+      "type": "string",
+      "pattern": "^omp:(work|recording|release|party|license|agreement|manifest|receipt|settlement):[a-z0-9][a-z0-9._-]{2,127}$"
+    },
+    "recording_id": {
+      "type": "string",
+      "pattern": "^omp:(work|recording|release|party|license|agreement|manifest|receipt|settlement):[a-z0-9][a-z0-9._-]{2,127}$"
+    },
+    "work_id": {
+      "type": "string",
+      "pattern": "^omp:(work|recording|release|party|license|agreement|manifest|receipt|settlement):[a-z0-9][a-z0-9._-]{2,127}$"
+    },
+    "release_id": {
+      "type": "string",
+      "pattern": "^omp:(work|recording|release|party|license|agreement|manifest|receipt|settlement):[a-z0-9][a-z0-9._-]{2,127}$"
+    },
+    "issuer_id": {
+      "type": "string",
+      "pattern": "^omp:(work|recording|release|party|license|agreement|manifest|receipt|settlement):[a-z0-9][a-z0-9._-]{2,127}$"
+    },
+    "assets": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "asset_id",
+          "media_type",
+          "sha256",
+          "size_bytes"
+        ],
+        "properties": {
+          "asset_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "media_type": {
+            "type": "string",
+            "enum": [
+              "audio/flac",
+              "audio/mpeg",
+              "audio/ogg",
+              "audio/wav",
+              "audio/mp4"
+            ]
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "agreement_id": {
+      "type": "string",
+      "pattern": "^omp:(work|recording|release|party|license|agreement|manifest|receipt|settlement):[a-z0-9][a-z0-9._-]{2,127}$"
+    },
+    "license_id": {
+      "type": "string",
+      "pattern": "^omp:(work|recording|release|party|license|agreement|manifest|receipt|settlement):[a-z0-9][a-z0-9._-]{2,127}$"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "signature": {
+      "type": "object",
+      "required": [
+        "algorithm",
+        "key_id",
+        "value"
+      ],
+      "properties": {
+        "algorithm": {
+          "const": "Ed25519"
+        },
+        "key_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "value": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+$"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

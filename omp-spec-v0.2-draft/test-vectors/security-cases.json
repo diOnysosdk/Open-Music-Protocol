@@ -1,0 +1,29 @@
+{
+  "profile": "OMP-v0.2-security-cases-1",
+  "description": "Normative case expectations; production behavior is not implemented by these fixtures.",
+  "cases": [
+    {"id": "asset-primary-flac-valid", "fixture": "../fixtures/audio/omp-triangle-250ms.flac", "expected": "VALID"},
+    {"id": "asset-alternate-wav-valid", "fixture": "../fixtures/audio/omp-triangle-250ms.wav", "expected": "VALID"},
+    {"id": "asset-one-byte-altered", "mutation": "flip byte at offset 100", "expected_error": "OMP_ASSET_BINDING_INVALID"},
+    {"id": "asset-truncated", "mutation": "remove final byte", "expected_error": "OMP_ASSET_BINDING_INVALID"},
+    {"id": "multi-asset-lowest-rank", "fixture": "../fixtures/audio/fixture-index.json", "expected_asset_id": "primary-flac"},
+    {"id": "path-parent-traversal", "relative_path": "../outside.wav", "expected_error": "OMP_ASSET_BINDING_INVALID"},
+    {"id": "path-encoded-parent", "relative_path": "%2e%2e/outside.wav", "expected_error": "OMP_ASSET_BINDING_INVALID"},
+    {"id": "path-backslash", "relative_path": "audio\\outside.wav", "expected_error": "OMP_ASSET_BINDING_INVALID"},
+    {"id": "path-absolute-posix", "relative_path": "/audio/file.wav", "expected_error": "OMP_ASSET_BINDING_INVALID"},
+    {"id": "path-absolute-windows", "relative_path": "C:/audio/file.wav", "expected_error": "OMP_ASSET_BINDING_INVALID"},
+    {"id": "path-symlink-escape", "relative_path": "audio/link.wav", "external_condition": "link resolves outside package root", "expected_error": "OMP_ASSET_BINDING_INVALID"},
+    {"id": "signature-altered-field", "mutation": "replace signed title after signing", "expected_error": "OMP_SIGNATURE_INVALID"},
+    {"id": "signature-truncated", "mutation": "remove one signature byte", "expected_error": "OMP_SIGNATURE_INVALID"},
+    {"id": "signature-wrong-domain", "mutation": "verify manifest with license domain", "expected_error": "OMP_SIGNING_DOMAIN_MISMATCH"},
+    {"id": "signing-key-unknown", "external_condition": "key_id absent from pinned identity", "expected_error": "OMP_KEY_UNKNOWN"},
+    {"id": "signing-key-revoked-current", "external_condition": "authentic signature predates compromise but current lifecycle revokes key", "expected_authenticity": "VALID", "expected_error": "OMP_KEY_REVOKED"},
+    {"id": "identity-fork", "external_condition": "two valid different documents at the same sequence", "expected_error": "OMP_TRUST_CONFLICT"},
+    {"id": "license-at-exclusive-expiry", "evaluation_time": "2026-10-27T00:00:00Z", "expires_at": "2026-10-27T00:00:00Z", "expected_error": "OMP_LICENSE_EXPIRED"},
+    {"id": "license-no-trusted-time", "clock_evidence": "none", "expected_error": "OMP_TRUSTED_TIME_UNAVAILABLE"},
+    {"id": "metadata-non-nfc", "value": "Cafe\u0301", "expected_error": "OMP_SCHEMA_INVALID"},
+    {"id": "unknown-critical-extension", "critical_extensions": ["https://example.invalid/omp/unknown"], "expected_error": "OMP_UNSUPPORTED_VERSION"},
+    {"id": "unknown-noncritical-extension", "extensions": {"https://example.invalid/omp/unknown": {"value": 1}}, "expected": "VALID_BUT_IGNORED"}
+  ]
+}
+

@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec.omp.example/v0.1/settlement.schema.json",
+  "title": "OMP settlement v0.1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "settlement_id",
+    "agreement_id",
+    "agreement_version",
+    "period_start",
+    "period_end",
+    "currency",
+    "gross_minor",
+    "deductions_minor",
+    "allocations",
+    "receipt_merkle_root",
+    "issuer_id",
+    "signature"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.1"
+    },
+    "settlement_id": {
+      "type": "string",
+      "pattern": "^omp:(work|recording|release|party|license|agreement|manifest|receipt|settlement):[a-z0-9][a-z0-9._-]{2,127}$"
+    },
+    "agreement_id": {
+      "type": "string",
+      "pattern": "^omp:(work|recording|release|party|license|agreement|manifest|receipt|settlement):[a-z0-9][a-z0-9._-]{2,127}$"
+    },
+    "agreement_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "period_start": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "period_end": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$"
+    },
+    "gross_minor": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$"
+    },
+    "deductions_minor": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$"
+    },
+    "allocations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "party_id",
+          "amount_minor"
+        ],
+        "properties": {
+          "party_id": {
+            "type": "string",
+            "pattern": "^omp:(work|recording|release|party|license|agreement|manifest|receipt|settlement):[a-z0-9][a-z0-9._-]{2,127}$"
+          },
+          "amount_minor": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)$"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "receipt_merkle_root": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "issuer_id": {
+      "type": "string",
+      "pattern": "^omp:(work|recording|release|party|license|agreement|manifest|receipt|settlement):[a-z0-9][a-z0-9._-]{2,127}$"
+    },
+    "signature": {
+      "type": "object",
+      "required": [
+        "algorithm",
+        "key_id",
+        "value"
+      ],
+      "properties": {
+        "algorithm": {
+          "const": "Ed25519"
+        },
+        "key_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "value": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+$"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

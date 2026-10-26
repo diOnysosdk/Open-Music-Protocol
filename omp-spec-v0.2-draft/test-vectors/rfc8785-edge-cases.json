@@ -1,0 +1,22 @@
+{
+  "profile": "RFC8785-official-edge-subset-1",
+  "source": "RFC 8785 Appendix B and Section 3.2.3",
+  "notes": "binary64_hex is the exact IEEE-754 input. NaN and infinities are rejection cases because they are not JSON numbers.",
+  "numbers": [
+    {"binary64_hex": "0000000000000000", "expected": "0"},
+    {"binary64_hex": "8000000000000000", "expected": "0"},
+    {"binary64_hex": "0000000000000001", "expected": "5e-324"},
+    {"binary64_hex": "8000000000000001", "expected": "-5e-324"},
+    {"binary64_hex": "7fefffffffffffff", "expected": "1.7976931348623157e+308"},
+    {"binary64_hex": "ffefffffffffffff", "expected": "-1.7976931348623157e+308"},
+    {"binary64_hex": "4340000000000000", "expected": "9007199254740992"},
+    {"binary64_hex": "c340000000000000", "expected": "-9007199254740992"},
+    {"binary64_hex": "41b3de4355555555", "expected": "333333333.3333333"},
+    {"binary64_hex": "44b52d02c7e14af6", "expected": "1e+23"}
+  ],
+  "reject_binary64_hex": ["7ff0000000000000", "fff0000000000000", "7ff8000000000000"],
+  "utf16_property_order": {
+    "input_names": ["€", "\r", "ö", "1", "😀", "\u0080"],
+    "expected_names": ["\r", "1", "\u0080", "ö", "€", "😀"]
+  }
+}

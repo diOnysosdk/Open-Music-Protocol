@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": "OMP_SIGNATURE_INVALID",
+    "message": "Signature verification failed",
+    "request_id": "request-0001"
+  }
+}

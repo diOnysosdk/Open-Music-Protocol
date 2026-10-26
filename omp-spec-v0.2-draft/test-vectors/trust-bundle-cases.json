@@ -1,0 +1,122 @@
+{
+  "status": "proposal-only-pending-protocol-owner-approval",
+  "schema": "../schemas/trust-bundle.schema.json",
+  "notes": [
+    "The base bundle intentionally demonstrates legacy v0.1 pinned-key carriage without changing a v0.1 signed object.",
+    "Bundle signatures use the approved OMP-TRUST-BUNDLE-v0.2 domain.",
+    "Case mutations use JSON Pointer paths and are applied independently to base_bundle."
+  ],
+  "base_bundle": {
+    "schema_version": "0.2",
+    "profile": "omp-offline-trust-bundle-v0.2",
+    "bundle_id": "omp:trust-bundle:fixture-001",
+    "created_at": "2026-10-26T12:00:00Z",
+    "next_update_at": "2026-11-02T12:00:00Z",
+    "identity_documents": [],
+    "lifecycle_events": [],
+    "legacy_bindings": [
+      {
+        "issuer_id": "omp:party:artist-0001",
+        "key_id": "test-key-01",
+        "algorithm": "Ed25519",
+        "public_key_base64url": "A6EHv_POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg",
+        "roles": ["manifest", "license", "rights", "settlement", "receipt"],
+        "provenance": "user-pinned"
+      }
+    ],
+    "conflicts": [],
+    "provenance": [],
+    "signatures": [
+      {
+        "algorithm": "Ed25519",
+        "key_id": "root-01",
+        "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "id": "legacy-pinned-bundle-schema-valid",
+      "mutation": null,
+      "expected_schema_valid": true,
+      "expected_semantic_valid": true
+    },
+    {
+      "id": "unknown-key-algorithm",
+      "mutation": {
+        "op": "replace",
+        "path": "/legacy_bindings/0/algorithm",
+        "value": "Ed448"
+      },
+      "expected_schema_valid": false,
+      "expected_semantic_valid": false
+    },
+    {
+      "id": "bundle-padded-public-key",
+      "mutation": {
+        "op": "replace",
+        "path": "/legacy_bindings/0/public_key_base64url",
+        "value": "A6EHv_POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg="
+      },
+      "expected_schema_valid": false,
+      "expected_semantic_valid": false
+    },
+    {
+      "id": "revocation-compromise-from-on-retired",
+      "mutation": {
+        "op": "add",
+        "path": "/lifecycle_events/0",
+        "value": {
+          "schema_version": "0.2",
+          "event_id": "omp:key-event:invalid-retired-001",
+          "identity_id": "omp:party:sha256-ae36cc294fcd28645d28df96769b6c55417564f0058050f7a1f84698618abe89",
+          "key_id": "manifest-01",
+          "sequence": 1,
+          "previous_event_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+          "event_type": "revoke",
+          "issued_at": "2026-10-27T12:00:00Z",
+          "effective_at": "2026-10-27T12:00:00Z",
+          "compromise_from": "2026-10-26T12:00:00Z",
+          "reason": "retired",
+          "proofs": [
+            {
+              "algorithm": "Ed25519",
+              "key_id": "root-01",
+              "value": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+            }
+          ]
+        }
+      },
+      "expected_schema_valid": false,
+      "expected_semantic_valid": false
+    },
+    {
+      "id": "bundle-conflict-with-one-branch",
+      "mutation": {
+        "op": "add",
+        "path": "/conflicts/0",
+        "value": {
+          "identity_id": "omp:party:sha256-ae36cc294fcd28645d28df96769b6c55417564f0058050f7a1f84698618abe89",
+          "sequence": 1,
+          "document_hashes": [
+            "0000000000000000000000000000000000000000000000000000000000000000"
+          ]
+        }
+      },
+      "expected_schema_valid": false,
+      "expected_semantic_valid": false
+    },
+    {
+      "id": "bundle-next-update-before-created",
+      "mutation": {
+        "op": "replace",
+        "path": "/next_update_at",
+        "value": "2026-10-25T12:00:00Z"
+      },
+      "expected_schema_valid": true,
+      "expected_semantic_valid": false,
+      "reason": "cross-field timestamp ordering"
+    }
+  ]
+}
+

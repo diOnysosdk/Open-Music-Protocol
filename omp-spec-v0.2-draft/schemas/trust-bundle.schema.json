@@ -1,0 +1,171 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec.omp.example/v0.2/trust-bundle.schema.json",
+  "$comment": "PROPOSAL ONLY. Freshness, revocation boundaries, and publisher semantics require protocol-owner approval per ADR-002.",
+  "title": "OMP offline trust bundle v0.2 draft",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "profile",
+    "bundle_id",
+    "created_at",
+    "identity_documents",
+    "lifecycle_events",
+    "legacy_bindings",
+    "conflicts",
+    "provenance",
+    "signatures"
+  ],
+  "properties": {
+    "schema_version": { "const": "0.2" },
+    "profile": { "const": "omp-offline-trust-bundle-v0.2" },
+    "bundle_id": {
+      "type": "string",
+      "pattern": "^omp:trust-bundle:[a-z0-9][a-z0-9._-]{2,127}$"
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "next_update_at": { "type": "string", "format": "date-time" },
+    "identity_documents": {
+      "type": "array",
+      "items": { "$ref": "identity-document.schema.json" }
+    },
+    "lifecycle_events": {
+      "type": "array",
+      "items": { "$ref": "key-lifecycle-event.schema.json" }
+    },
+    "legacy_bindings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/legacyBinding" }
+    },
+    "conflicts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/conflict" }
+    },
+    "provenance": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/provenance" }
+    },
+    "signatures": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/proof" }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "partyId": {
+      "type": "string",
+      "pattern": "^omp:party:[a-z0-9][a-z0-9._-]{2,127}$"
+    },
+    "identityId": {
+      "type": "string",
+      "pattern": "^omp:party:sha256-[0-9a-f]{64}$"
+    },
+    "keyId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$"
+    },
+    "proof": {
+      "type": "object",
+      "required": ["algorithm", "key_id", "value"],
+      "properties": {
+        "algorithm": { "const": "Ed25519" },
+        "key_id": { "$ref": "#/$defs/keyId" },
+        "value": { "type": "string", "pattern": "^[A-Za-z0-9_-]{86}$" }
+      },
+      "additionalProperties": false
+    },
+    "revocation": {
+      "type": "object",
+      "required": [
+        "identity_id",
+        "key_id",
+        "identity_sequence",
+        "previous_document_hash",
+        "published_at",
+        "effective_at",
+        "reason",
+        "proofs"
+      ],
+      "properties": {
+        "identity_id": { "$ref": "#/$defs/identityId" },
+        "key_id": { "$ref": "#/$defs/keyId" },
+        "identity_sequence": { "type": "integer", "minimum": 1 },
+        "previous_document_hash": { "$ref": "#/$defs/sha256" },
+        "published_at": { "type": "string", "format": "date-time" },
+        "effective_at": { "type": "string", "format": "date-time" },
+        "compromise_from": { "type": "string", "format": "date-time" },
+        "reason": { "enum": ["superseded", "compromised", "lost", "retired"] },
+        "proofs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/proof" },
+          "minItems": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": { "required": ["compromise_from"] },
+          "then": { "properties": { "reason": { "const": "compromised" } } }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "legacyBinding": {
+      "type": "object",
+      "required": [
+        "issuer_id",
+        "key_id",
+        "algorithm",
+        "public_key_base64url",
+        "roles",
+        "provenance"
+      ],
+      "properties": {
+        "issuer_id": { "$ref": "#/$defs/partyId" },
+        "key_id": { "$ref": "#/$defs/keyId" },
+        "algorithm": { "const": "Ed25519" },
+        "public_key_base64url": { "type": "string", "pattern": "^[A-Za-z0-9_-]{43}$" },
+        "roles": {
+          "type": "array",
+          "items": {
+            "enum": ["manifest", "license", "rights", "settlement", "receipt", "trust-bundle", "time-anchor"]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "valid_from": { "type": "string", "format": "date-time" },
+        "valid_until": { "type": "string", "format": "date-time" },
+        "provenance": { "enum": ["user-pinned", "publisher-signed", "local-policy"] }
+      },
+      "additionalProperties": false
+    },
+    "conflict": {
+      "type": "object",
+      "required": ["identity_id", "sequence", "document_hashes"],
+      "properties": {
+        "identity_id": { "$ref": "#/$defs/identityId" },
+        "sequence": { "type": "integer", "minimum": 0 },
+        "document_hashes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/sha256" },
+          "minItems": 2,
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["publisher_id", "created_at", "content_hash", "signature"],
+      "properties": {
+        "publisher_id": { "$ref": "#/$defs/partyId" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "content_hash": { "$ref": "#/$defs/sha256" },
+        "signature": { "$ref": "#/$defs/proof" }
+      },
+      "additionalProperties": false
+    }
+  }
+}
+

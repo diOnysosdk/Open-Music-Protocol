@@ -1,0 +1,105 @@
+{
+  "suite": "OMP-v0.2-metadata-and-asset-binding-draft",
+  "status": "proposed-schema-and-semantic-cases-not-cryptographically-final",
+  "base_document": "manifest-metadata-multiasset.valid.json",
+  "cases": [
+    {
+      "id": "valid-metadata-multiasset",
+      "mutation": null,
+      "schema_valid": true,
+      "semantic_valid": true,
+      "note": "This schema-case signature is intentionally a placeholder; use cryptographic-vectors.json for the approved domain and real signature."
+    },
+    {
+      "id": "v01-remains-v01",
+      "source": "../../omp-spec-v0.1/examples/manifest.json",
+      "schema": "../../omp-spec-v0.1/schemas/manifest.schema.json",
+      "schema_valid": true,
+      "signature_valid": true,
+      "note": "A v0.2 implementation must dispatch this unchanged object to the v0.1 validator and signing domain."
+    },
+    {
+      "id": "reject-v02-as-v01",
+      "mutation": { "op": "replace", "path": "/schema_version", "value": "0.1" },
+      "schema_valid": false,
+      "semantic_valid": false,
+      "reason": "v0.1 forbids metadata and v0.2 asset properties; changing only the version never migrates an object"
+    },
+    {
+      "id": "reject-path-traversal",
+      "mutation": { "op": "replace", "path": "/assets/0/relative_path", "value": "../outside.flac" },
+      "schema_valid": false,
+      "semantic_valid": false
+    },
+    {
+      "id": "reject-absolute-path",
+      "mutation": { "op": "replace", "path": "/assets/0/relative_path", "value": "/audio/song.flac" },
+      "schema_valid": false,
+      "semantic_valid": false
+    },
+    {
+      "id": "reject-non-nfc-path",
+      "mutation": { "op": "replace", "path": "/assets/0/relative_path", "value": "audio/Café.flac" },
+      "schema_valid": true,
+      "semantic_valid": false,
+      "reason": "JSON Schema cannot enforce Unicode normalization"
+    },
+    {
+      "id": "reject-duplicate-relative-path",
+      "mutation": { "op": "replace", "path": "/assets/1/relative_path", "value": "audio/northern-lights.flac" },
+      "schema_valid": true,
+      "semantic_valid": false
+    },
+    {
+      "id": "reject-duplicate-selection-rank",
+      "mutation": { "op": "replace", "path": "/assets/1/selection_rank", "value": 0 },
+      "schema_valid": true,
+      "semantic_valid": false
+    },
+    {
+      "id": "reject-no-primary",
+      "mutation": { "op": "replace", "path": "/assets/0/role", "value": "alternate" },
+      "schema_valid": true,
+      "semantic_valid": false
+    },
+    {
+      "id": "reject-two-primary",
+      "mutation": { "op": "replace", "path": "/assets/1/role", "value": "primary" },
+      "schema_valid": true,
+      "semantic_valid": false
+    },
+    {
+      "id": "reject-duplicate-credit-id",
+      "mutation": { "op": "replace", "path": "/metadata/contributors/1/credit_id", "value": "example-artist" },
+      "schema_valid": true,
+      "semantic_valid": false
+    },
+    {
+      "id": "reject-invalid-calendar-date",
+      "mutation": { "op": "replace", "path": "/metadata/release/release_date", "value": "2026-02-31" },
+      "schema_valid": true,
+      "semantic_valid": false
+    },
+    {
+      "id": "reject-track-total-smaller-than-number",
+      "mutation": { "op": "replace", "path": "/metadata/release/track_number", "value": 2 },
+      "schema_valid": true,
+      "semantic_valid": false
+    },
+    {
+      "id": "signed-path-tamper",
+      "mutation": { "op": "replace", "path": "/assets/0/relative_path", "value": "audio/renamed.flac" },
+      "schema_valid": true,
+      "semantic_valid": true,
+      "signature_valid": false,
+      "reason": "Every v0.2 field remains inside the signed top-level object"
+    },
+    {
+      "id": "wrong-file-at-right-path",
+      "external_condition": "resolved file bytes do not match size_bytes and sha256",
+      "schema_valid": true,
+      "semantic_valid": true,
+      "asset_binding_valid": false
+    }
+  ]
+}
