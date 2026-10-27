@@ -14,8 +14,18 @@ permissions:
 
 jobs:
   linux-asan-fuzz:
+    name: linux-asan-fuzz (${{ matrix.target }})
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - json_v02
+          - canonicalization
+          - identity_license
+          - path_and_envelope
+          - media_decode
     env:
       RUST_BACKTRACE: '1'
     steps:
@@ -34,20 +44,19 @@ jobs:
         shell: bash
         env:
           SECONDS_PER_TARGET: ${{ inputs.seconds_per_target }}
+          FUZZ_TARGET: ${{ matrix.target }}
         run: |
           set -euo pipefail
           [[ "$SECONDS_PER_TARGET" =~ ^[0-9]+$ ]]
           test "$SECONDS_PER_TARGET" -ge 30
           test "$SECONDS_PER_TARGET" -le 900
-          for target in json_v02 canonicalization identity_license path_and_envelope media_decode; do
-            mkdir -p "fuzz/corpus/$target" "fuzz/artifacts/$target"
-            cargo +nightly fuzz run "$target" "fuzz/corpus/$target" \
-              --sanitizer address \
-              -- \
-              -artifact_prefix="fuzz/artifacts/$target/" \
-              -max_total_time="$SECONDS_PER_TARGET" \
-              -print_final_stats=1 2>&1 | tee "fuzz/evidence/$target.log"
-          done
+          mkdir -p "fuzz/corpus/$FUZZ_TARGET" "fuzz/artifacts/$FUZZ_TARGET"
+          cargo +nightly fuzz run "$FUZZ_TARGET" "fuzz/corpus/$FUZZ_TARGET" \
+            --sanitizer address \
+            -- \
+            -artifact_prefix="fuzz/artifacts/$FUZZ_TARGET/" \
+            -max_total_time="$SECONDS_PER_TARGET" \
+            -print_final_stats=1 2>&1 | tee "fuzz/evidence/$FUZZ_TARGET.log"
       - name: Hash fuzz evidence
         if: always()
         shell: bash
@@ -58,7 +67,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: linux-asan-fuzz-${{ github.run_id }}-${{ github.run_attempt }}
+          name: linux-asan-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             fuzz/evidence/
             fuzz/corpus/
