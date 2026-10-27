@@ -12,7 +12,7 @@ cargo build --release --locked -p omp-cli -p omp-player
 mkdir -p "$output/sbom" "$output/samples"
 cp target/release/omp target/release/omp-player "$output/"
 cp README.md LICENSE-MIT LICENSE-APACHE THIRD-PARTY-NOTICES.md "$output/"
-cp scripts/verify-alpha.py "$output/"
+cp scripts/verify-alpha.py scripts/audit-alpha.py "$output/"
 cp docs/SECURITY.md docs/alpha-installation-v0.2.md \
   docs/alpha-package-workflow-v0.2.md docs/w8-alpha-readiness-v0.2.md \
   docs/w8-release-readiness-v0.2.md docs/w8-alpha-candidate-report-v0.2.md \
@@ -33,3 +33,4 @@ EOF
     xargs -0 sha256sum | sed 's#  \./#  #'>SHA256SUMS
 )
 python3 scripts/verify-alpha.py "$output"
+python3 scripts/audit-alpha.py "$output" linux

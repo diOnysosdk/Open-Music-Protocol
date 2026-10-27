@@ -27,6 +27,7 @@ jobs:
       - run: cargo test --workspace
       - run: cargo doc --workspace --no-deps
       - run: python -m pytest -p no:cacheprovider omp-spec-v0.1/tests omp-spec-v0.2-draft/tests omp-spec-v0.2-amendments/tests
+      - run: python -m unittest discover -s scripts/tests -v
       - run: python scripts/verify-frozen.py
   audit:
     runs-on: ubuntu-latest
@@ -35,4 +36,21 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: rustsec/audit-check@v2
         with: { token: '${{ secrets.GITHUB_TOKEN }}' }
+  package-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: sudo apt-get update && sudo apt-get install -y libasound2-dev libsndfile1
+      - run: bash scripts/build-alpha.sh dist/omp-v0.2-alpha-linux-x86_64
+      - run: python3 scripts/verify-alpha.py dist/omp-v0.2-alpha-linux-x86_64
+      - run: python3 scripts/audit-alpha.py dist/omp-v0.2-alpha-linux-x86_64 linux
+      - uses: actions/upload-artifact@v4
+        with:
+          name: omp-v0.2-alpha-linux-x86_64-${{ github.sha }}
+          path: dist/omp-v0.2-alpha-linux-x86_64
+          if-no-files-found: error
+          retention-days: 30
 

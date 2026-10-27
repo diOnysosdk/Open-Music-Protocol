@@ -9,7 +9,7 @@ New-Item -ItemType Directory -Path $Output | Out-Null
 Copy-Item target/release/omp.exe $Output/
 Copy-Item target/release/omp-player.exe $Output/
 Copy-Item README.md,LICENSE-MIT,LICENSE-APACHE,THIRD-PARTY-NOTICES.md $Output/
-Copy-Item scripts/verify-alpha.py $Output/
+Copy-Item scripts/verify-alpha.py,scripts/audit-alpha.py $Output/
 Copy-Item docs/SECURITY.md,docs/alpha-installation-v0.2.md,docs/alpha-package-workflow-v0.2.md,docs/w8-alpha-readiness-v0.2.md,docs/w8-release-readiness-v0.2.md,docs/w8-alpha-candidate-report-v0.2.md $Output/
 New-Item -ItemType Directory -Force -Path "$Output/sbom" | Out-Null
 Get-ChildItem crates -Filter *.cdx.json -Recurse | Copy-Item -Destination "$Output/sbom"
@@ -23,5 +23,6 @@ This internal, unsigned candidate is not approved for publication or production 
 Verify SHA256SUMS through an independently authenticated channel before execution.
 See w8-alpha-candidate-report-v0.2.md for limitations and security requirements.
 '@ | Out-File -Encoding ascii "$Output/EXPERIMENTAL-ALPHA.txt"
-Get-ChildItem $Output -File -Recurse | Where-Object Name -ne SHA256SUMS | Get-FileHash -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLowerInvariant())  $($_.Path.Substring((Resolve-Path $Output).Path.Length + 1).Replace('\\','/'))" } | Sort-Object | Out-File -Encoding ascii "$Output/SHA256SUMS"
+Get-ChildItem $Output -File -Recurse | Where-Object Name -ne SHA256SUMS | Get-FileHash -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLowerInvariant())  $($_.Path.Substring((Resolve-Path $Output).Path.Length + 1).Replace('\','/'))" } | Sort-Object | Out-File -Encoding ascii "$Output/SHA256SUMS"
 python scripts/verify-alpha.py $Output
+python scripts/audit-alpha.py $Output windows
