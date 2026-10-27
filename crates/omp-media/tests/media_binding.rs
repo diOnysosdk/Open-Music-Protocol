@@ -281,3 +281,16 @@ fn flac_bytes_cannot_enter_the_wav_decoder_profile() {
         Err(Error::MediaTypeInvalid)
     ));
 }
+
+#[test]
+fn impossible_flac_streaminfo_frame_sizes_are_rejected_before_decode() {
+    let bytes = b"fLaC\0\0\0\x22\0\x2d\0\x60\x21\xfe\x0a\0\0\0\0\x43fLa\xf3\xa5\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\x32\x06\0\0\x22\0\x2d\0\x60\0\0\0\0\xf9\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\xf9\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
+    assert!(matches!(
+        omp_media::validate_container_structure(
+            &mut std::io::Cursor::new(bytes),
+            "audio/flac",
+            bytes.len() as u64,
+        ),
+        Err(Error::ResourceLimit)
+    ));
+}

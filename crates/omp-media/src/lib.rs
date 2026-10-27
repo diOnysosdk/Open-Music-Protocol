@@ -317,7 +317,26 @@ pub fn validate_container_structure<R: Read + Seek>(
         if block_type == 127 || (first && (block_type != 0 || length != 34)) {
             return Err(Error::MediaTypeInvalid);
         }
-        reader.seek(SeekFrom::Start(end))?;
+        if first {
+            let mut stream_info = [0_u8; 34];
+            reader.read_exact(&mut stream_info)?;
+            let minimum_block_size = u16::from_be_bytes([stream_info[0], stream_info[1]]);
+            let maximum_block_size = u16::from_be_bytes([stream_info[2], stream_info[3]]);
+            let minimum_frame_size =
+                u32::from_be_bytes([0, stream_info[4], stream_info[5], stream_info[6]]);
+            let maximum_frame_size =
+                u32::from_be_bytes([0, stream_info[7], stream_info[8], stream_info[9]]);
+            if minimum_block_size < 16
+                || maximum_block_size < minimum_block_size
+                || (minimum_frame_size != 0 && u64::from(minimum_frame_size) > size)
+                || (maximum_frame_size != 0 && u64::from(maximum_frame_size) > size)
+                || (maximum_frame_size != 0 && maximum_frame_size < minimum_frame_size)
+            {
+                return Err(Error::ResourceLimit);
+            }
+        } else {
+            reader.seek(SeekFrom::Start(end))?;
+        }
         position = end;
         first = false;
         if header[0] & 0x80 != 0 {
