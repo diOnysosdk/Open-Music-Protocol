@@ -1,5 +1,27 @@
 # OMP v0.2 external alpha readiness
 
+## W8.4 status — 2026-10-27
+
+Workflow and frozen-baseline verification passed locally, but the workflow
+changes remain uncommitted and GitHub CLI is unauthenticated. No hosted Windows,
+Linux, or ASan execution evidence exists. Controlled external alpha therefore
+remains **NO-GO**.
+
+## W8.3 status — 2026-10-27
+
+GitHub transport is available and `origin/main` matches local commit
+`a384ca834578a44a35cb64760760da718798e78c`, but GitHub CLI remains
+unauthenticated. No hosted Windows/Linux result or Linux sanitizer campaign is
+available. A manual Linux ASan workflow and bounded media-decoder target have
+been prepared and locally compile-checked, but configured or compiled checks
+are not counted as execution evidence.
+
+- Controlled development: **GO**.
+- Controlled external alpha: **NO-GO** pending green hosted matrix and ASan
+  run evidence for the same reviewed commit.
+- Production release: **NO-GO** pending independent assurance and the existing
+  production security requirements.
+
 Label for every candidate: **OMP v0.2 — Experimental Alpha / Not Production Ready**.
 
 GitHub CI could not be dispatched on 2026-10-26 because `gh auth status`

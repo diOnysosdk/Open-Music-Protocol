@@ -1,8 +1,19 @@
 # OMP v0.2 W8.2 alpha-candidate report
 
+## W8.3 qualification update — 2026-10-27
+
+The existing internal unsigned Windows candidate remains a local assurance
+artifact only. It was not rebuilt, published, tagged, or expanded with a Linux
+binary because the required hosted platform and sanitizer gates have not
+executed. A versioned cross-platform external-alpha candidate must be produced
+from the exact commit that obtains green Windows, Linux, audit, and Linux ASan
+jobs; its checksums and run URLs must then be recorded here.
+
+Current qualification is unchanged: controlled external alpha is **NO-GO**.
+
 > **OMP v0.2 — Experimental Alpha / Not Production Ready**
 
-**Date:** 2026-10-26
+**Original candidate date:** 2026-10-26
 
 ## Candidate scope
 

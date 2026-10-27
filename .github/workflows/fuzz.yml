@@ -1,0 +1,68 @@
+name: OMP bounded sanitizer fuzzing
+
+on:
+  workflow_dispatch:
+    inputs:
+      seconds_per_target:
+        description: Bounded runtime in seconds for each fuzz target
+        required: true
+        default: '300'
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  linux-asan-fuzz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      RUST_BACKTRACE: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --locked
+      - name: Record environment
+        run: |
+          mkdir -p fuzz/evidence
+          rustc -Vv | tee fuzz/evidence/rustc.txt
+          cargo -V | tee fuzz/evidence/cargo.txt
+          cargo fuzz --version | tee fuzz/evidence/cargo-fuzz.txt
+          uname -a | tee fuzz/evidence/uname.txt
+      - name: Run bounded AddressSanitizer campaigns
+        shell: bash
+        env:
+          SECONDS_PER_TARGET: ${{ inputs.seconds_per_target }}
+        run: |
+          set -euo pipefail
+          [[ "$SECONDS_PER_TARGET" =~ ^[0-9]+$ ]]
+          test "$SECONDS_PER_TARGET" -ge 30
+          test "$SECONDS_PER_TARGET" -le 900
+          for target in json_v02 canonicalization identity_license path_and_envelope media_decode; do
+            mkdir -p "fuzz/corpus/$target" "fuzz/artifacts/$target"
+            cargo +nightly fuzz run "$target" "fuzz/corpus/$target" \
+              --sanitizer address \
+              -- \
+              -artifact_prefix="fuzz/artifacts/$target/" \
+              -max_total_time="$SECONDS_PER_TARGET" \
+              -print_final_stats=1 2>&1 | tee "fuzz/evidence/$target.log"
+          done
+      - name: Hash fuzz evidence
+        if: always()
+        shell: bash
+        run: |
+          find fuzz/evidence fuzz/artifacts fuzz/corpus -type f -print0 2>/dev/null \
+            | sort -z | xargs -0 -r sha256sum > fuzz/evidence/SHA256SUMS
+      - name: Upload logs, corpus, and crash artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-asan-fuzz-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            fuzz/evidence/
+            fuzz/corpus/
+            fuzz/artifacts/
+          if-no-files-found: error
+          retention-days: 30
+
