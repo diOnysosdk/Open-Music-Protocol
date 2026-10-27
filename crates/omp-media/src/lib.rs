@@ -389,13 +389,13 @@ fn open_source(root: &PackageRoot, relative: &str) -> Result<SourceHandle, Error
     let directory_flags = OFlags::RDONLY | OFlags::DIRECTORY | OFlags::NOFOLLOW | OFlags::CLOEXEC;
     let mut directory = root.root_handle.try_clone()?;
     for segment in &segments[..segments.len() - 1] {
-        directory = openat(&directory, segment, directory_flags, Mode::empty())
+        directory = openat(&directory, *segment, directory_flags, Mode::empty())
             .map_err(std::io::Error::from)?
             .into();
     }
     let asset = openat(
         &directory,
-        segments.last().expect("portable path is nonempty"),
+        *segments.last().expect("portable path is nonempty"),
         OFlags::RDONLY | OFlags::NOFOLLOW | OFlags::CLOEXEC,
         Mode::empty(),
     )
