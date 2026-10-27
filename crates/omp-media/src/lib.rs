@@ -390,7 +390,7 @@ fn open_source(root: &PackageRoot, relative: &str) -> Result<SourceHandle, Error
     let mut directory = root.root_handle.try_clone()?;
     for segment in &segments[..segments.len() - 1] {
         directory = openat(&directory, *segment, directory_flags, Mode::empty())
-            .map_err(std::io::Error::from)?
+            .map_err(map_unix_open_error)?
             .into();
     }
     let asset = openat(
@@ -399,8 +399,17 @@ fn open_source(root: &PackageRoot, relative: &str) -> Result<SourceHandle, Error
         OFlags::RDONLY | OFlags::NOFOLLOW | OFlags::CLOEXEC,
         Mode::empty(),
     )
-    .map_err(std::io::Error::from)?;
+    .map_err(map_unix_open_error)?;
     Ok(SourceHandle { file: asset.into() })
+}
+
+#[cfg(unix)]
+fn map_unix_open_error(error: rustix::io::Errno) -> Error {
+    if matches!(error, rustix::io::Errno::LOOP | rustix::io::Errno::NOTDIR) {
+        Error::PathInvalid("symlink or non-directory path component".into())
+    } else {
+        Error::Io(std::io::Error::from(error))
+    }
 }
 
 fn supported(media_type: &str) -> bool {
