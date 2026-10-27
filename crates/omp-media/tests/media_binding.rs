@@ -268,3 +268,16 @@ fn oversized_flac_metadata_declaration_is_rejected_before_decode() {
         Err(Error::ResourceLimit)
     ));
 }
+
+#[test]
+fn flac_bytes_cannot_enter_the_wav_decoder_profile() {
+    let bytes = b"fLaC/\0\0\0\x04\0\x09]\0\0\0\0\0ID\x09]\0L\xff";
+    assert!(matches!(
+        omp_media::validate_container_structure(
+            &mut std::io::Cursor::new(bytes),
+            "audio/wav",
+            bytes.len() as u64,
+        ),
+        Err(Error::MediaTypeInvalid)
+    ));
+}

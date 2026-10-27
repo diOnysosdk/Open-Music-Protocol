@@ -278,6 +278,20 @@ pub fn validate_container_structure<R: Read + Seek>(
     size: u64,
 ) -> Result<(), Error> {
     reader.seek(SeekFrom::Start(0))?;
+    if media_type == "audio/wav" {
+        let mut header = [0_u8; 12];
+        reader
+            .read_exact(&mut header)
+            .map_err(|_| Error::MediaTypeInvalid)?;
+        if &header[..4] != b"RIFF" || &header[8..] != b"WAVE" {
+            return Err(Error::MediaTypeInvalid);
+        }
+        let declared = u64::from(u32::from_le_bytes(header[4..8].try_into().unwrap())) + 8;
+        if declared > size {
+            return Err(Error::ResourceLimit);
+        }
+        return Ok(());
+    }
     if media_type != "audio/flac" {
         return Ok(());
     }
