@@ -12,6 +12,16 @@ fuzz_target!(|data: &[u8]| {
     // Bound memory independently from libFuzzer's evolving maximum input.
     let bytes = data[..data.len().min(8 * 1024 * 1024)].to_vec();
     for extension in ["wav", "flac"] {
+        let media_type = if extension == "flac" { "audio/flac" } else { "audio/wav" };
+        if omp_media::validate_container_structure(
+            &mut Cursor::new(bytes.as_slice()),
+            media_type,
+            bytes.len() as u64,
+        )
+        .is_err()
+        {
+            continue;
+        }
         let stream =
             MediaSourceStream::new(Box::new(Cursor::new(bytes.clone())), Default::default());
         let mut hint = Hint::new();

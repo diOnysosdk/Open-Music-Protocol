@@ -259,6 +259,7 @@ fn verify_asset(
     if snapshot.metadata()?.len() != total {
         return Err(Error::BindingInvalid("snapshot size mismatch".into()));
     }
+    validate_container_structure(&mut snapshot, &asset.media_type, total)?;
     snapshot.seek(SeekFrom::Start(0))?;
     Ok(VerifiedMedia {
         file: snapshot,
@@ -268,6 +269,47 @@ fn verify_asset(
         size_bytes: total,
         sha256: actual,
     })
+}
+
+/// Validate allocation-sensitive container declarations before decoding.
+pub fn validate_container_structure<R: Read + Seek>(
+    reader: &mut R,
+    media_type: &str,
+    size: u64,
+) -> Result<(), Error> {
+    reader.seek(SeekFrom::Start(0))?;
+    if media_type != "audio/flac" {
+        return Ok(());
+    }
+    let mut magic = [0_u8; 4];
+    reader.read_exact(&mut magic)?;
+    if &magic != b"fLaC" {
+        return Err(Error::MediaTypeInvalid);
+    }
+    let mut position = 4_u64;
+    let mut first = true;
+    loop {
+        let mut header = [0_u8; 4];
+        reader
+            .read_exact(&mut header)
+            .map_err(|_| Error::MediaTypeInvalid)?;
+        position += 4;
+        let block_type = header[0] & 0x7f;
+        let length = u64::from_be_bytes([0, 0, 0, 0, 0, header[1], header[2], header[3]]);
+        let end = position.checked_add(length).ok_or(Error::ResourceLimit)?;
+        if end > size {
+            return Err(Error::ResourceLimit);
+        }
+        if block_type == 127 || (first && (block_type != 0 || length != 34)) {
+            return Err(Error::MediaTypeInvalid);
+        }
+        reader.seek(SeekFrom::Start(end))?;
+        position = end;
+        first = false;
+        if header[0] & 0x80 != 0 {
+            return Ok(());
+        }
+    }
 }
 
 fn validate_asset_set(assets: &[Asset]) -> Result<(), Error> {

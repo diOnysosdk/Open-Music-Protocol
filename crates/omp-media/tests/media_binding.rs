@@ -253,3 +253,18 @@ fn symlink_or_reparse_asset_is_rejected_when_platform_allows_creation() {
         Err(Error::PathInvalid(_))
     ));
 }
+
+#[test]
+fn oversized_flac_metadata_declaration_is_rejected_before_decode() {
+    let mut malicious = b"fLaC".to_vec();
+    malicious.extend_from_slice(&[0x00, 0xff, 0xff, 0xff]);
+    malicious.resize(70, 0);
+    assert!(matches!(
+        omp_media::validate_container_structure(
+            &mut std::io::Cursor::new(&malicious),
+            "audio/flac",
+            malicious.len() as u64,
+        ),
+        Err(Error::ResourceLimit)
+    ));
+}
