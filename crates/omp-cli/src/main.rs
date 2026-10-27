@@ -31,6 +31,9 @@ fn run() -> Result<(), Box<dyn Error>> {
         return Ok(());
     };
     let rest: Vec<String> = args.collect();
+    if rest.len() == 1 && matches!(rest[0].as_str(), "help" | "--help" | "-h") {
+        return print_command_help(&command);
+    }
     match command.as_str() {
         "keygen" => keygen(&rest),
         "pack" | "package" => pack(&rest),
@@ -38,6 +41,10 @@ fn run() -> Result<(), Box<dyn Error>> {
         "verify" => verify(&rest),
         "help" | "--help" | "-h" => {
             print_help();
+            Ok(())
+        }
+        "--version" | "-V" => {
+            println!("omp {}", env!("CARGO_PKG_VERSION"));
             Ok(())
         }
         _ => Err(input_error(format!("unknown command `{command}`")).into()),
@@ -107,7 +114,7 @@ fn pack(args: &[String]) -> Result<(), Box<dyn Error>> {
     let audio = Path::new(&positional[0]);
     let media_type = media_type(audio)?;
     let private_path = Path::new(required(&flags, "private-key")?);
-    let private: PrivateKeyDocument = strict_document(&fs::read(private_path)?)?;
+    let private: PrivateKeyDocument = strict_document(&read_file(private_path)?)?;
     if private.algorithm != "Ed25519" {
         return Err(input_error("private key algorithm must be Ed25519").into());
     }
@@ -148,7 +155,8 @@ fn inspect(args: &[String]) -> Result<(), Box<dyn Error>> {
     if positional.len() != 1 {
         return Err(input_error("inspect requires exactly one manifest file").into());
     }
-    let manifest: Manifest = parse_and_validate(&fs::read(&positional[0])?)?;
+    let manifest_path = Path::new(&positional[0]);
+    let manifest: Manifest = parse_and_validate(&read_file(manifest_path)?)?;
     println!("manifest_id:  {}", manifest.manifest_id);
     println!("recording_id: {}", manifest.recording_id);
     println!("issuer_id:    {}", manifest.issuer_id);
@@ -176,9 +184,9 @@ fn verify(args: &[String]) -> Result<(), Box<dyn Error>> {
         } else {
             (Path::new(&positional[0]), Path::new(&positional[1]))
         };
-    let trusted_key: PublicKeyDocument =
-        strict_document(&fs::read(required(&flags, "public-key")?)?)?;
-    let manifest = omp_manifest::verify_signature(&fs::read(manifest_path)?, &trusted_key)?;
+    let public_key_path = Path::new(required(&flags, "public-key")?);
+    let trusted_key: PublicKeyDocument = strict_document(&read_file(public_key_path)?)?;
+    let manifest = omp_manifest::verify_signature(&read_file(manifest_path)?, &trusted_key)?;
     omp_manifest::verify_asset(&manifest, audio, media_type(audio)?)?;
     println!("verified: signature and audio bytes are valid");
     Ok(())
@@ -189,24 +197,52 @@ fn strict_document<T: serde::de::DeserializeOwned>(bytes: &[u8]) -> Result<T, Bo
     Ok(serde_json::from_value(value)?)
 }
 
+fn read_file(path: &Path) -> io::Result<Vec<u8>> {
+    fs::read(path).map_err(|error| {
+        io::Error::new(
+            error.kind(),
+            format!("cannot read {}: {error}", path.display()),
+        )
+    })
+}
+
 fn arguments(args: &[String]) -> Result<(Vec<String>, HashMap<String, String>), io::Error> {
     let mut positional = Vec::new();
     let mut flags = HashMap::new();
     let mut index = 0;
+    let mut options = true;
     while index < args.len() {
         let value = &args[index];
-        if let Some(name) = value.strip_prefix("--") {
+        if options && value == "--" {
+            options = false;
+        } else if options && value.starts_with('-') && !value.starts_with("--") {
+            return Err(input_error(format!(
+                "unsupported short option `{value}`; use --help for usage"
+            )));
+        } else if options && value.starts_with("--") {
+            let option = &value[2..];
+            let (name, inline_value) = option
+                .split_once('=')
+                .map_or((option, None), |(name, value)| (name, Some(value)));
             if name.is_empty() {
                 return Err(input_error("empty flag"));
             }
-            index += 1;
-            let Some(flag_value) = args.get(index) else {
-                return Err(input_error(format!("--{name} requires a value")));
+            let flag_value = if let Some(flag_value) = inline_value {
+                if flag_value.is_empty() {
+                    return Err(input_error(format!("--{name} requires a value")));
+                }
+                flag_value.to_owned()
+            } else {
+                index += 1;
+                let Some(flag_value) = args.get(index) else {
+                    return Err(input_error(format!("--{name} requires a value")));
+                };
+                if flag_value.starts_with("--") {
+                    return Err(input_error(format!("--{name} requires a value")));
+                }
+                flag_value.clone()
             };
-            if flag_value.starts_with("--") {
-                return Err(input_error(format!("--{name} requires a value")));
-            }
-            if flags.insert(name.to_owned(), flag_value.clone()).is_some() {
+            if flags.insert(name.to_owned(), flag_value).is_some() {
                 return Err(input_error(format!("duplicate --{name}")));
             }
         } else {
@@ -286,6 +322,18 @@ fn media_type(path: &Path) -> Result<&'static str, io::Error> {
             "unsupported audio extension; expected flac, mp3, ogg/oga, wav/wave, or m4a/mp4",
         )),
     }
+}
+
+fn print_command_help(command: &str) -> Result<(), Box<dyn Error>> {
+    let help = match command {
+        "keygen" => "USAGE:\n  omp keygen [--key-id ID] [--private FILE] [--public FILE]\n\nPrivate key material is written only to the private-key document.",
+        "pack" | "package" => "USAGE:\n  omp pack AUDIO --manifest-id ID --recording-id ID --work-id ID --issuer-id ID --agreement-id ID --license-id ID --private-key FILE [--output FILE]\n\nThe output manifest never contains the private signing key.",
+        "inspect" => "USAGE:\n  omp inspect MANIFEST.json\n\nInspect validates structure but does not verify signer trust or the signature.",
+        "verify" => "USAGE:\n  omp verify AUDIO MANIFEST.json --public-key FILE\n\nVerification checks strict JSON, Ed25519 signature, file size, media type, and SHA-256.",
+        _ => return Err(input_error(format!("unknown command `{command}`")).into()),
+    };
+    println!("{help}");
+    Ok(())
 }
 
 fn print_help() {

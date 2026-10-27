@@ -31,6 +31,7 @@ third-party audit. Frozen baseline: `OMP-v0.2-w0-freeze.1`.
 | W8-08 | Low | Local pins/identities can be sensitive correlation data. | Privacy documentation and platform encryption/access control required |
 | W8-09 | Medium | GitHub-hosted Windows/Linux CI has not executed for the candidate revision because no authenticated GitHub session was available. | Open, repository owner/release engineering |
 | W8-10 | Medium | Windows sanitizer fuzzing could not link without the LLVM ASan runtime; no bounded campaign statistics exist. | Open, CI/QA; run on supported Linux nightly runner |
+| W8-11 | High | The Linux ASan `media_decode` campaign on commit `0cda635d767b1fb73d5c52796a175f53ff17a09a` reached an attacker-controlled FLAC decode path that attempted a 2,240,120,197-byte allocation after 127,178 executions. Existing container preflight checks do not fully bound decoder allocations. | Open; media fuzz gate **FAILED**. External alpha and production release remain blocked pending root-cause remediation, a minimal regression, and a clean repeat of all five ASan campaigns. |
 
 Supply-chain evidence generated locally: CycloneDX 1.5 SBOMs for all eight
 crates, zero RustSec findings across 186 locked packages, a 186-package license

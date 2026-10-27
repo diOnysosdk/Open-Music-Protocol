@@ -1,5 +1,28 @@
 # OMP v0.2 W8.2 fuzz results
 
+## W8 hosted result — 2026-10-27
+
+GitHub Actions run
+[`40495625138`](https://github.com/diOnysosdk/Open-Music-Protocol/actions/runs/40495625138)
+executed the five 300-second Linux AddressSanitizer jobs against commit
+`0cda635d767b1fb73d5c52796a175f53ff17a09a`.
+
+| Target | Job | Result |
+|---|---:|---|
+| `json_v02` | `122160209073` | Pass |
+| `canonicalization` | `122160209130` | Pass |
+| `identity_license` | `122160208967` | Pass |
+| `path_and_envelope` | `122160209335` | Pass |
+| `media_decode` | `122160209146` | **FAILED** |
+
+The media campaign failed after 127,178 executions when malformed FLAC input
+caused an attempted 2,240,120,197-byte allocation. The archived reproducer is
+`oom-1990531be4e3425c9e57c55bbffeba5f87732b00`. This is an unresolved
+memory-exhaustion security finding, not a successful bounded campaign. The
+gate remains failed until the precise allocation path is remediated, a minimal
+deterministic regression is retained, and all five full-duration jobs pass on
+the same reviewed commit.
+
 ## W8.4 execution gate — 2026-10-27
 
 Locked local compilation of all five fuzz binaries passed. The GitHub Linux

@@ -1,69 +1,46 @@
-# Open Music Protocol — OMP Core v0.1
+# Open Music Protocol — OMP v0.2 experimental reference
 
-This Rust workspace implements the experimental protocol in
-`omp-spec-v0.1`. It is offline-only and contains no registry, network,
-database, blockchain, payments, royalty engine, DRM, player, or GUI.
+This offline-first Rust workspace implements OMP v0.1 compatibility and the
+approved v0.2 reference components. It contains no network service,
+blockchain, registry, payments, telemetry, or GUI.
 
-## Crates
+> **Experimental Alpha / Not Production Ready.** The open high-severity
+> `W8-11` FLAC decoder memory-exhaustion finding blocks external alpha and
+> production release.
 
-- `omp-core`: strict wire models, duplicate-key-safe parsing, and semantic validation.
-- `omp-crypto`: SHA-256, Ed25519, RFC 8785 JCS, and OMP domain separation.
-- `omp-manifest`: sidecar creation, signing, and audio-byte verification.
-- `omp-cli`: `keygen`, `pack`/`package`, `inspect`, and `verify`.
+## Build and validate
 
-## Build and test
+Rust stable and Python 3 are required. From the repository root:
 
 ```text
-cargo fmt --all --check
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace
-python -m pytest omp-spec-v0.1/tests
+cargo build --locked --workspace
+cargo test --locked --workspace
+cargo clippy --locked --workspace --all-targets -- -D warnings
+python -m pytest -p no:cacheprovider omp-spec-v0.1/tests omp-spec-v0.2-draft/tests omp-spec-v0.2-amendments/tests
+python scripts/verify-frozen.py
 ```
 
-## Offline workflow
+The `omp` CLI creates and verifies v0.1 manifests. Run `omp --help` and
+`omp <command> --help` for exact syntax. The `omp-player` binary is the v0.2
+offline reference player; it remains release-blocked by `W8-11`.
 
-Generate a keypair (private material is written separately and is never put
-in a manifest):
+## Safe offline manifest workflow
 
 ```text
 omp keygen --key-id artist-key-01 --private artist.private.json --public artist.public.json
+omp pack song.wav --manifest-id omp:manifest:song-001 --recording-id omp:recording:song-001 --work-id omp:work:song-001 --issuer-id omp:party:artist-001 --agreement-id omp:agreement:song-001 --license-id omp:license:song-001 --private-key artist.private.json --output song.omc.json
+omp inspect song.omc.json
+omp verify song.wav song.omc.json --public-key artist.public.json
 ```
 
-The specification says protocol IDs are registry-assigned, so packaging
-requires the caller to supply them:
+Private keys are separate files and never enter manifests. `verify` establishes
+strict parsing, signature validity, and exact audio-byte binding under the
+explicitly supplied public key; it does not establish authorization or legal
+ownership. See [the alpha workflow](docs/alpha-package-workflow-v0.2.md) and
+[installation guide](docs/alpha-installation-v0.2.md).
 
-```text
-omp pack song.flac \
-  --manifest-id omp:manifest:song-001 \
-  --recording-id omp:recording:song-001 \
-  --work-id omp:work:song-001 \
-  --issuer-id omp:party:artist-001 \
-  --agreement-id omp:agreement:song-001 \
-  --license-id omp:license:song-001 \
-  --private-key artist.private.json
+## License and security
 
-omp inspect song.flac.omc.json
-omp verify song.flac song.flac.omc.json --public-key artist.public.json
-```
-
-Output files are created atomically with create-new semantics; existing files
-are not overwritten. On Unix, newly generated private-key files use mode
-`0600`. On Windows, protect the key file using an appropriate user-only ACL or
-an OS-backed secret manager. The CLI accepts external key documents but does
-not claim to provide a production key-management system.
-
-## Security boundary
-
-Successful `verify` means that:
-
-1. the JSON is structurally and semantically valid OMP v0.1,
-2. its signature is valid under the explicitly supplied trusted public key,
-3. the key ID and algorithm match that trusted key record, and
-4. the selected local audio file has the signed SHA-256 and size.
-
-It does not establish legal ownership, key authorization, revocation status,
-human listening, or rights-registry validity. Those policies are outside v0.1.
-
-See [docs/architecture.md](docs/architecture.md) for decisions and known
-specification gaps.
-
+The code is dual-licensed under Apache-2.0 or MIT. Fixture licensing is
+documented beside the fixtures. Report security issues using
+[docs/SECURITY.md](docs/SECURITY.md).

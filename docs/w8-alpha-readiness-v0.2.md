@@ -1,5 +1,37 @@
 # OMP v0.2 external alpha readiness
 
+## W8.5 usability and packaging
+
+The reference CLI now provides subcommand help, version output, stricter option
+diagnostics, and black-box integration tests. Windows and Linux internal
+candidate builders use clean output directories, verify the frozen baseline,
+include public CC0 samples, SBOMs, licenses, attribution, installation and
+security documents, and generate a complete `SHA256SUMS`. The independent
+`scripts/verify-alpha.py` rejects unsafe, duplicate, missing, altered, and
+unlisted candidate files.
+
+This usability workstream is **GO** for integration. It does not change the
+release gate: `W8-11` remains open at High severity, controlled external alpha
+is **NO-GO**, and production is **NO-GO**.
+
+## Current blocker — 2026-10-27
+
+Hosted conformance run
+[`40495623365`](https://github.com/diOnysosdk/Open-Music-Protocol/actions/runs/40495623365)
+passed Windows, Ubuntu, and RustSec jobs against commit
+`0cda635d767b1fb73d5c52796a175f53ff17a09a`. The matching hosted sanitizer
+run
+[`40495625138`](https://github.com/diOnysosdk/Open-Music-Protocol/actions/runs/40495625138)
+passed four targets but failed `media_decode` with an unresolved FLAC
+memory-exhaustion finding. Therefore:
+
+- Controlled development: **GO**, excluding reliance on the affected decoder
+  for adversarial media.
+- Controlled external alpha: **NO-GO** pending media-decoder remediation and a
+  green five-target ASan rerun.
+- Production release: **NO-GO**, additionally pending all previously recorded
+  independent assurance and platform requirements.
+
 ## W8.4 status — 2026-10-27
 
 Workflow and frozen-baseline verification passed locally, but the workflow
