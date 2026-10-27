@@ -817,6 +817,7 @@ name = "omp-player"
 version = "0.1.0"
 dependencies = [
  "ed25519-dalek",
+ "omp-core",
  "omp-crypto",
  "omp-identity",
  "omp-license",

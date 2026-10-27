@@ -19,7 +19,9 @@ struct PrivateKeyDocument {
 
 fn main() {
     if let Err(error) = run() {
-        eprintln!("error: {error}");
+        let category = omp_core::diagnostics::classify_message(&error.to_string());
+        eprintln!("{}: {error}", category.code());
+        eprintln!("action: {}", category.action());
         std::process::exit(1);
     }
 }

@@ -27,6 +27,7 @@ jobs:
       - run: cargo test --workspace
       - run: cargo doc --workspace --no-deps
       - run: python -m pytest -p no:cacheprovider omp-spec-v0.1/tests omp-spec-v0.2-draft/tests omp-spec-v0.2-amendments/tests
+      - run: python scripts/conformance.py --quiet
       - run: python -m unittest discover -s scripts/tests -v
       - run: python scripts/verify-frozen.py
   audit:

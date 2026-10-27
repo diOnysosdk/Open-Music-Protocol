@@ -37,7 +37,9 @@ Private keys are separate files and never enter manifests. `verify` establishes
 strict parsing, signature validity, and exact audio-byte binding under the
 explicitly supplied public key; it does not establish authorization or legal
 ownership. See [the alpha workflow](docs/alpha-package-workflow-v0.2.md) and
-[installation guide](docs/alpha-installation-v0.2.md).
+[installation guide](docs/alpha-installation-v0.2.md). Developers should start
+with the [v0.2 quickstart](docs/developer-quickstart-v0.2.md) and
+[Rust API map](docs/reference-apis-v0.2.md).
 
 ## License and security
 

@@ -45,6 +45,7 @@ fn missing_duplicate_and_unknown_options_fail_clearly() {
     let missing = omp(&["verify", "audio.wav", "manifest.json", "--public-key"]);
     assert!(!missing.status.success());
     assert!(stderr(&missing).contains("--public-key requires a value"));
+    assert!(stderr(&missing).contains("OMP-DIAG-USAGE"));
 
     let duplicate = omp(&["inspect", "a.json", "--x=one", "--x=two"]);
     assert!(!duplicate.status.success());
@@ -53,6 +54,19 @@ fn missing_duplicate_and_unknown_options_fail_clearly() {
     let unknown = omp(&["inspect", "a.json", "--unknown=value"]);
     assert!(!unknown.status.success());
     assert!(stderr(&unknown).contains("unknown option --unknown"));
+}
+
+#[test]
+fn malformed_content_has_a_stable_actionable_category() {
+    let root = std::env::temp_dir().join(format!("omp-cli-malformed-{}", std::process::id()));
+    std::fs::create_dir_all(&root).unwrap();
+    let path = root.join("bad.json");
+    std::fs::write(&path, b"{not-json").unwrap();
+    let output = omp(&["inspect", path.to_str().unwrap()]);
+    assert!(!output.status.success());
+    assert!(stderr(&output).contains("OMP-DIAG-MALFORMED-CONTENT"));
+    assert!(stderr(&output).contains("action:"));
+    std::fs::remove_dir_all(root).unwrap();
 }
 
 #[test]

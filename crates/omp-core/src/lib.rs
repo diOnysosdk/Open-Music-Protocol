@@ -15,6 +15,9 @@ use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 /// Strict OMP v0.2 wire models and validation.
 pub mod v02;
 
+/// Stable developer-facing diagnostic categories layered over protocol errors.
+pub mod diagnostics;
+
 /// Validation or decoding failure for an OMP object.
 #[derive(Debug, thiserror::Error)]
 pub enum Error {

@@ -3,8 +3,10 @@
 ## Readiness decision
 
 - Controlled development: **GO**.
-- External alpha/release-candidate testing: **NO-GO** until both hosted CI
-  platforms and bounded fuzz campaigns produce archived passing evidence.
+- W8.5 packaging qualification: **PASS** on hosted Windows, Ubuntu, RustSec,
+  and Linux packaging run `40500074568` for commit `9b88fb48`.
+- External alpha/release-candidate testing: **NO-GO** while `W8-11` remains
+  OPEN/HIGH; a clean five-target sanitizer rerun is required after remediation.
 - Production release: **NO-GO** pending independent review, production secure
   storage/time adapters, fuzz campaigns, reproducibility, signed artifacts,
   and explicit protocol-owner approval.

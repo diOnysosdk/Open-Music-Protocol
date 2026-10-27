@@ -9,6 +9,7 @@ rust-version.workspace = true
 [dependencies]
 ed25519-dalek.workspace = true
 omp-crypto = { path = "../omp-crypto" }
+omp-core = { path = "../omp-core" }
 omp-identity = { path = "../omp-identity" }
 omp-license = { path = "../omp-license" }
 omp-media = { path = "../omp-media" }

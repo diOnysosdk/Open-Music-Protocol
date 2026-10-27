@@ -1,5 +1,23 @@
 # OMP v0.2 W8.2 alpha-candidate report
 
+## W8.5 hosted Linux candidate — 2026-10-27
+
+Commit `9b88fb48d3a825d4773327d2817d4b221606b28f` passed Windows, Ubuntu,
+RustSec, and Linux packaging in hosted run
+[`40500074568`](https://github.com/diOnysosdk/Open-Music-Protocol/actions/runs/40500074568).
+The retained Linux x86_64 artifact is 1,747,218 bytes with GitHub archive
+digest `sha256:83af13b8890a290c99511c4d9b6ca409feb89b17ce0b989f65f721c29f115779`.
+Its downloaded inventory verified 27/27 checksums and the package audit passed
+28 files/eight SBOMs with no private-key documents. Primary hashes are:
+
+- `omp`: `0f49963395233e585076b41dcf8aa4e1972319fe0322dd155f847469d18275a3`
+- `omp-player`: `23ff5b4666297bc0ca376b2d3d51d64a2091a5d5fdeb43d219c4303f7c835361`
+- `SHA256SUMS`: `d22df2a6fd7b1a107507bcffe259a9e31584d9c21a16dacf293cec6303ae5e20`
+
+W8.5 packaging qualification is **PASS**. This artifact is not a release:
+`W8-11` remains **OPEN/HIGH**, and external alpha and production remain
+**NO-GO**.
+
 ## W8.3 qualification update — 2026-10-27
 
 The existing internal unsigned Windows candidate remains a local assurance

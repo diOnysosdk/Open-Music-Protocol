@@ -1,5 +1,28 @@
 # OMP v0.2 external alpha readiness
 
+## W8.5 packaging qualification closure — 2026-10-27
+
+W8.5 packaging qualification is **PASS** for commit
+`9b88fb48d3a825d4773327d2817d4b221606b28f`. Local `main` and `origin/main`
+matched that commit before qualification. Hosted GitHub Actions run
+[`40500074568`](https://github.com/diOnysosdk/Open-Music-Protocol/actions/runs/40500074568)
+completed successfully: Windows test, Ubuntu test, RustSec audit, and Linux
+packaging jobs each concluded `success`.
+
+The hosted artifact
+`omp-v0.2-alpha-linux-x86_64-9b88fb48d3a825d4773327d2817d4b221606b28f`
+was 1,747,218 bytes; GitHub recorded archive digest
+`sha256:83af13b8890a290c99511c4d9b6ca409feb89b17ce0b989f65f721c29f115779`.
+After download, all 27 entries in `SHA256SUMS` verified. Independent audit
+covered 28 files, found eight SBOMs, and found no private-key documents. The
+Linux executables were `omp` (1,229,944 bytes,
+`0f49963395233e585076b41dcf8aa4e1972319fe0322dd155f847469d18275a3`)
+and `omp-player` (2,715,512 bytes,
+`23ff5b4666297bc0ca376b2d3d51d64a2091a5d5fdeb43d219c4303f7c835361`).
+
+This closes only W8.5 usability/packaging qualification. `W8-11` remains
+**OPEN/HIGH**. External alpha and production release remain **NO-GO**.
+
 ## W8.5 usability and packaging
 
 The reference CLI now provides subcommand help, version output, stricter option

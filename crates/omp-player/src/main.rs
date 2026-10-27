@@ -7,7 +7,16 @@ use omp_player::{
     decode_headless, play_with_sink, prepare, DecodeLimits, LocalAudioSink, TrustPolicy,
 };
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() {
+    if let Err(error) = run() {
+        let category = omp_core::diagnostics::classify_message(&error.to_string());
+        eprintln!("{}: {error}", category.code());
+        eprintln!("action: {}", category.action());
+        std::process::exit(1);
+    }
+}
+
+fn run() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<_> = std::env::args().collect();
     if args.len() != 7 || !matches!(args[1].as_str(), "verify" | "play-headless" | "play") {
         eprintln!("usage: omp-player <verify|play-headless|play> <package-root> <manifest.json> <license.json> <identity.json> <public-key-base64url>");
