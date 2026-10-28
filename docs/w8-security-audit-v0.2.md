@@ -33,6 +33,10 @@ third-party audit. Frozen baseline: `OMP-v0.2-w0-freeze.1`.
 | W8-10 | Medium | Windows sanitizer fuzzing could not link without the LLVM ASan runtime; no bounded campaign statistics exist. | Open, CI/QA; run on supported Linux nightly runner |
 | W8-11 | High | The Linux ASan `media_decode` campaign on commit `0cda635d767b1fb73d5c52796a175f53ff17a09a` reached an attacker-controlled FLAC decode path that attempted a 2,240,120,197-byte allocation after 127,178 executions. Existing container preflight checks do not fully bound decoder allocations. | Open; media fuzz gate **FAILED**. External alpha and production release remain blocked pending root-cause remediation, a minimal regression, and a clean repeat of all five ASan campaigns. |
 
+Raspberry Pi 400 ARM64 validation is a separate, currently **BLOCKED** hardware
+qualification gate. Native Pi evidence does not by itself satisfy or redefine
+the W8-11 remediation and fuzz acceptance criteria.
+
 Supply-chain evidence generated locally: CycloneDX 1.5 SBOMs for all eight
 crates, zero RustSec findings across 186 locked packages, a 186-package license
 inventory, and a Gitleaks history scan with no findings. These outputs must be

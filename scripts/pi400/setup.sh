@@ -27,6 +27,9 @@ if ! command -v rustup >/dev/null 2>&1; then
   exit 2
 fi
 rustup toolchain install stable --component rustfmt,clippy
+python3 -m venv "$HOME/.venv-omp-validation"
+"$HOME/.venv-omp-validation/bin/python" -m pip install --upgrade pip
+"$HOME/.venv-omp-validation/bin/python" -m pip install pytest jsonschema rfc8785 cryptography soundfile
 rustc --version
 cargo --version
 echo "Setup complete; no service, firewall, runner, or network configuration was changed."
