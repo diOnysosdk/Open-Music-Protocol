@@ -6,7 +6,7 @@ central service. The v0.2 protocol and its 42-artifact baseline are frozen.
 
 ## Prerequisites and builds
 
-Use Rust 1.75 or newer (stable, with Cargo, rustfmt, and Clippy) and Python 3.12
+Use Rust 1.88 or newer (stable, with Cargo, rustfmt, and Clippy) and Python 3.12
 or newer. Python conformance dependencies are `pytest`, `jsonschema`, `rfc8785`,
 `cryptography`, and `soundfile`. Builds use the committed `Cargo.lock`.
 

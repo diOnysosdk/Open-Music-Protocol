@@ -106,6 +106,81 @@ impl AudioSink for LocalAudioSink {
     }
 }
 
+/// Controllable local playback created only from an authorized prepared handle.
+pub struct LocalPlayback {
+    _stream: rodio::OutputStream,
+    sink: rodio::Sink,
+    report: PlaybackReport,
+}
+
+impl LocalPlayback {
+    /// Start local playback from an already authorized and verified handle.
+    pub fn start(prepared: PreparedPlayback) -> Result<Self, Error> {
+        let report = PlaybackReport {
+            classification: prepared.permit.kind(),
+            recording_id: prepared.permit.recording_id().to_owned(),
+            asset_id: prepared.media.asset_id().to_owned(),
+            media_type: prepared.media.media_type().to_owned(),
+            decoded_frames: 0,
+            decoded_packets: 0,
+        };
+        let (stream, handle) = rodio::OutputStream::try_default()
+            .map_err(|error| Error::Decoder(format!("audio output unavailable: {error}")))?;
+        let sink = rodio::Sink::try_new(&handle)
+            .map_err(|error| Error::Decoder(format!("audio sink unavailable: {error}")))?;
+        let source = rodio::Decoder::new(prepared.media.into_file())
+            .map_err(|error| Error::Decoder(format!("audio decoder: {error}")))?;
+        sink.append(source.take_duration(Duration::from_secs(4 * 60 * 60)));
+        Ok(Self {
+            _stream: stream,
+            sink,
+            report,
+        })
+    }
+
+    /// Pause without discarding the authorized playback session.
+    pub fn pause(&self) {
+        self.sink.pause();
+    }
+
+    /// Resume a paused authorized playback session.
+    pub fn resume(&self) {
+        self.sink.play();
+    }
+
+    /// Stop and discard queued audio.
+    pub fn stop(&self) {
+        self.sink.stop();
+    }
+
+    /// Set linear output volume, clamped to the UI's supported range.
+    pub fn set_volume(&self, volume: f32) {
+        self.sink.set_volume(volume.clamp(0.0, 1.0));
+    }
+
+    /// Seek when the underlying verified source supports it.
+    pub fn seek(&self, position: Duration) -> Result<(), Error> {
+        self.sink
+            .try_seek(position)
+            .map_err(|error| Error::Decoder(format!("seek unavailable: {error}")))
+    }
+
+    /// Current playback position reported by the audio sink.
+    pub fn position(&self) -> Duration {
+        self.sink.get_pos()
+    }
+
+    /// Whether playback has completed or was stopped.
+    pub fn is_finished(&self) -> bool {
+        self.sink.empty()
+    }
+
+    /// Security classification and authenticated identifiers for this session.
+    pub fn report(&self) -> &PlaybackReport {
+        &self.report
+    }
+}
+
 /// Play through a caller-selected sink only after preparation succeeded.
 pub fn play_with_sink<S: AudioSink>(
     prepared: PreparedPlayback,

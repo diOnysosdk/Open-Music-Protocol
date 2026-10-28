@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/omp-core", "crates/omp-crypto", "crates/omp-manifest", "crates/omp-cli", "crates/omp-identity", "crates/omp-media", "crates/omp-license", "crates/omp-player"]
+members = ["crates/omp-core", "crates/omp-crypto", "crates/omp-manifest", "crates/omp-cli", "crates/omp-identity", "crates/omp-media", "crates/omp-license", "crates/omp-player", "crates/omp-desktop"]
 resolver = "2"
 exclude = ["fuzz"]
 

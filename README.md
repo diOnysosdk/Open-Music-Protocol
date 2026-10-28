@@ -41,6 +41,22 @@ ownership. See [the alpha workflow](docs/alpha-package-workflow-v0.2.md) and
 with the [v0.2 quickstart](docs/developer-quickstart-v0.2.md) and
 [Rust API map](docs/reference-apis-v0.2.md).
 
+## Desktop reference player
+
+Build and launch the experimental offline GUI with:
+
+```text
+cargo run --locked -p omp-desktop
+```
+
+Import a package directory containing `manifest.json`, `license.json`,
+`identity.json`, and the signed relative media paths. The GUI indexes and
+displays metadata only after verification and invokes playback only through an
+authorized `PreparedPlayback`. Identity trust must be independently established
+and explicitly confirmed; it defaults off. See [the W10 report](docs/w10-implementation-report-v0.2.md)
+and [Pi 400 validation guide](docs/pi400-validation.md). `W8-11` still blocks
+external alpha and production release.
+
 ## License and security
 
 The code is dual-licensed under Apache-2.0 or MIT. Fixture licensing is
