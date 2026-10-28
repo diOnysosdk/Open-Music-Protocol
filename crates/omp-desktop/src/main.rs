@@ -24,6 +24,6 @@ fn main() -> eframe::Result<()> {
     eframe::run_native(
         "OMP Reference Player",
         options,
-        Box::new(move |_| Box::new(DesktopApp::load(index))),
+        Box::new(move |_| Ok(Box::new(DesktopApp::load(index)))),
     )
 }

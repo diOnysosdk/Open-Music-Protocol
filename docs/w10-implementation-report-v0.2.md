@@ -5,7 +5,7 @@ Git history and W10 handoff because a commit cannot contain its own SHA.
 
 ## Architecture and interface
 
-ADR-015 selects Rust-native `eframe/egui` 0.27 with the `glow` backend. The
+ADR-015 selects Rust-native `eframe/egui` 0.33 with the `glow` backend. The
 `omp-desktop` crate separates `library` persistence, testable `state`, OMP
 `service`, and `ui`. No network client or server exists. The desktop layout is
 built from a locked dependency graph requiring Rust 1.88 or newer. It is

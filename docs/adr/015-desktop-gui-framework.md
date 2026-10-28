@@ -4,7 +4,7 @@
 
 ## Decision
 
-Use `eframe/egui` 0.27 with its OpenGL (`glow`) native backend and Windows,
+Use `eframe/egui` 0.33 with its OpenGL (`glow`) native backend and Windows,
 X11, and Wayland support. Keep persistence, GUI state, OMP application
 services, protocol verification, and playback in separate modules/crates.
 

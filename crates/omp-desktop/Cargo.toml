@@ -11,7 +11,7 @@ name = "omp-desktop"
 path = "src/main.rs"
 
 [dependencies]
-eframe = { version = "0.27", default-features = false, features = ["glow", "x11", "wayland"] }
+eframe = { version = "0.33", default-features = false, features = ["glow", "x11", "wayland"] }
 omp-core = { path = "../omp-core" }
 omp-crypto = { path = "../omp-crypto" }
 omp-identity = { path = "../omp-identity" }
