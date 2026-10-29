@@ -17,6 +17,10 @@ use std::{
     path::{Path, PathBuf},
 };
 
+const MAX_CONTAINER_CHUNKS: u64 = 1_024;
+const MAX_CONTAINER_METADATA_BYTES: u64 = 64 * 1024 * 1024;
+const MAX_WAV_FMT_BYTES: u64 = 64 * 1024;
+
 /// W5 validation or media-binding failure.
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -279,22 +283,100 @@ pub fn validate_container_structure<R: Read + Seek>(
 ) -> Result<(), Error> {
     reader.seek(SeekFrom::Start(0))?;
     if media_type == "audio/wav" {
-        let mut header = [0_u8; 12];
-        reader
-            .read_exact(&mut header)
-            .map_err(|_| Error::MediaTypeInvalid)?;
-        if &header[..4] != b"RIFF" || &header[8..] != b"WAVE" {
-            return Err(Error::MediaTypeInvalid);
-        }
-        let declared = u64::from(u32::from_le_bytes(header[4..8].try_into().unwrap())) + 8;
-        if declared > size {
-            return Err(Error::ResourceLimit);
-        }
-        return Ok(());
+        return validate_wav_structure(reader, size);
     }
     if media_type != "audio/flac" {
         return Ok(());
     }
+    validate_flac_structure(reader, size)
+}
+
+fn validate_wav_structure<R: Read + Seek>(reader: &mut R, size: u64) -> Result<(), Error> {
+    let mut header = [0_u8; 12];
+    reader
+        .read_exact(&mut header)
+        .map_err(|_| Error::MediaTypeInvalid)?;
+    if &header[..4] != b"RIFF" || &header[8..] != b"WAVE" {
+        return Err(Error::MediaTypeInvalid);
+    }
+    let declared = u64::from(u32::from_le_bytes(header[4..8].try_into().unwrap()))
+        .checked_add(8)
+        .ok_or(Error::ResourceLimit)?;
+    if declared != size {
+        return Err(Error::ResourceLimit);
+    }
+
+    let mut position = 12_u64;
+    let mut chunks = 0_u64;
+    let mut metadata_bytes = 0_u64;
+    let mut found_format = false;
+    while position < declared {
+        chunks = chunks.checked_add(1).ok_or(Error::ResourceLimit)?;
+        if chunks > MAX_CONTAINER_CHUNKS {
+            return Err(Error::ResourceLimit);
+        }
+        let mut chunk_header = [0_u8; 8];
+        reader
+            .read_exact(&mut chunk_header)
+            .map_err(|_| Error::MediaTypeInvalid)?;
+        position = position.checked_add(8).ok_or(Error::ResourceLimit)?;
+        let length = u64::from(u32::from_le_bytes(chunk_header[4..8].try_into().unwrap()));
+        let padded_length = length.checked_add(length & 1).ok_or(Error::ResourceLimit)?;
+        let end = position
+            .checked_add(padded_length)
+            .ok_or(Error::ResourceLimit)?;
+        if end > declared {
+            return Err(Error::ResourceLimit);
+        }
+
+        match &chunk_header[..4] {
+            b"fmt " => {
+                if found_format || !(16..=MAX_WAV_FMT_BYTES).contains(&length) {
+                    return Err(Error::MediaTypeInvalid);
+                }
+                let mut format = [0_u8; 16];
+                reader
+                    .read_exact(&mut format)
+                    .map_err(|_| Error::MediaTypeInvalid)?;
+                let encoding = u16::from_le_bytes(format[0..2].try_into().unwrap());
+                let channels = u16::from_le_bytes(format[2..4].try_into().unwrap());
+                let sample_rate = u32::from_le_bytes(format[4..8].try_into().unwrap());
+                let byte_rate = u32::from_le_bytes(format[8..12].try_into().unwrap());
+                let block_align = u16::from_le_bytes(format[12..14].try_into().unwrap());
+                let bits_per_sample = u16::from_le_bytes(format[14..16].try_into().unwrap());
+                if !matches!(encoding, 1 | 3 | 0xfffe)
+                    || channels == 0
+                    || sample_rate == 0
+                    || byte_rate == 0
+                    || block_align == 0
+                    || bits_per_sample == 0
+                    || (encoding == 0xfffe && length < 40)
+                {
+                    return Err(Error::MediaTypeInvalid);
+                }
+                found_format = true;
+            }
+            b"data" => {
+                if !found_format {
+                    return Err(Error::MediaTypeInvalid);
+                }
+                return Ok(());
+            }
+            _ => {}
+        }
+        metadata_bytes = metadata_bytes
+            .checked_add(padded_length)
+            .ok_or(Error::ResourceLimit)?;
+        if metadata_bytes > MAX_CONTAINER_METADATA_BYTES {
+            return Err(Error::ResourceLimit);
+        }
+        reader.seek(SeekFrom::Start(end))?;
+        position = end;
+    }
+    Err(Error::MediaTypeInvalid)
+}
+
+fn validate_flac_structure<R: Read + Seek>(reader: &mut R, size: u64) -> Result<(), Error> {
     let mut magic = [0_u8; 4];
     reader.read_exact(&mut magic)?;
     if &magic != b"fLaC" {
@@ -302,7 +384,13 @@ pub fn validate_container_structure<R: Read + Seek>(
     }
     let mut position = 4_u64;
     let mut first = true;
+    let mut blocks = 0_u64;
+    let mut metadata_bytes = 0_u64;
     loop {
+        blocks = blocks.checked_add(1).ok_or(Error::ResourceLimit)?;
+        if blocks > MAX_CONTAINER_CHUNKS {
+            return Err(Error::ResourceLimit);
+        }
         let mut header = [0_u8; 4];
         reader
             .read_exact(&mut header)
@@ -310,6 +398,13 @@ pub fn validate_container_structure<R: Read + Seek>(
         position += 4;
         let block_type = header[0] & 0x7f;
         let length = u64::from_be_bytes([0, 0, 0, 0, 0, header[1], header[2], header[3]]);
+        metadata_bytes = metadata_bytes
+            .checked_add(4)
+            .and_then(|total| total.checked_add(length))
+            .ok_or(Error::ResourceLimit)?;
+        if metadata_bytes > MAX_CONTAINER_METADATA_BYTES {
+            return Err(Error::ResourceLimit);
+        }
         let end = position.checked_add(length).ok_or(Error::ResourceLimit)?;
         if end > size {
             return Err(Error::ResourceLimit);

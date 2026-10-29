@@ -294,3 +294,94 @@ fn impossible_flac_streaminfo_frame_sizes_are_rejected_before_decode() {
         Err(Error::ResourceLimit)
     ));
 }
+
+fn minimal_wav(extra_chunks: &[[u8; 8]], data_before_format: bool) -> Vec<u8> {
+    let format_payload = [
+        1, 0, // PCM
+        1, 0, // mono
+        0x80, 0xbb, 0, 0, // 48 kHz
+        0x00, 0x77, 0x01, 0, // 96 kB/s
+        2, 0, // block alignment
+        16, 0, // bits per sample
+    ];
+    let mut chunks = Vec::new();
+    if data_before_format {
+        chunks.extend_from_slice(b"data\0\0\0\0");
+    }
+    for chunk in extra_chunks {
+        chunks.extend_from_slice(chunk);
+    }
+    chunks.extend_from_slice(b"fmt \x10\0\0\0");
+    chunks.extend_from_slice(&format_payload);
+    if !data_before_format {
+        chunks.extend_from_slice(b"data\0\0\0\0");
+    }
+    let mut wav = b"RIFF".to_vec();
+    wav.extend_from_slice(&u32::try_from(chunks.len() + 4).unwrap().to_le_bytes());
+    wav.extend_from_slice(b"WAVE");
+    wav.extend_from_slice(&chunks);
+    wav
+}
+
+#[test]
+fn wav_chunk_structure_is_validated_before_decode() {
+    let valid = minimal_wav(&[], false);
+    omp_media::validate_container_structure(
+        &mut std::io::Cursor::new(&valid),
+        "audio/wav",
+        valid.len() as u64,
+    )
+    .unwrap();
+
+    let data_first = minimal_wav(&[], true);
+    assert!(matches!(
+        omp_media::validate_container_structure(
+            &mut std::io::Cursor::new(&data_first),
+            "audio/wav",
+            data_first.len() as u64,
+        ),
+        Err(Error::MediaTypeInvalid)
+    ));
+
+    let mut truncated = minimal_wav(&[], false);
+    truncated[40..44].copy_from_slice(&u32::MAX.to_le_bytes());
+    assert!(matches!(
+        omp_media::validate_container_structure(
+            &mut std::io::Cursor::new(&truncated),
+            "audio/wav",
+            truncated.len() as u64,
+        ),
+        Err(Error::ResourceLimit)
+    ));
+}
+
+#[test]
+fn excessive_container_chunk_counts_are_rejected() {
+    let empty_junk = *b"JUNK\0\0\0\0";
+    let chunks = vec![empty_junk; 1_024];
+    let wav = minimal_wav(&chunks, false);
+    assert!(matches!(
+        omp_media::validate_container_structure(
+            &mut std::io::Cursor::new(&wav),
+            "audio/wav",
+            wav.len() as u64,
+        ),
+        Err(Error::ResourceLimit)
+    ));
+
+    let mut flac = b"fLaC\0\0\0\x22".to_vec();
+    flac.extend_from_slice(&16_u16.to_be_bytes());
+    flac.extend_from_slice(&16_u16.to_be_bytes());
+    flac.resize(42, 0);
+    for _ in 0..1_024 {
+        flac.extend_from_slice(&[1, 0, 0, 0]);
+    }
+    assert!(matches!(
+        omp_media::validate_container_structure(
+            &mut std::io::Cursor::new(&flac),
+            "audio/flac",
+            flac.len() as u64,
+        ),
+        Err(Error::ResourceLimit)
+    ));
+}
