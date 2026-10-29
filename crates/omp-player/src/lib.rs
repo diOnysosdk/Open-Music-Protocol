@@ -254,7 +254,8 @@ pub trait AudioSink {
 pub struct LocalAudioSink;
 
 impl AudioSink for LocalAudioSink {
-    fn play(&self, file: File) -> Result<(), Error> {
+    fn play(&self, mut file: File) -> Result<(), Error> {
+        preflight_device_playback(&mut file, None, DecodeLimits::default())?;
         let (_stream, handle) = rodio::OutputStream::try_default()
             .map_err(|e| Error::Decoder(format!("audio device unavailable: {e}")))?;
         let sink = rodio::Sink::try_new(&handle)
@@ -279,19 +280,22 @@ pub struct LocalPlayback {
 impl LocalPlayback {
     /// Start local playback from an already authorized and verified handle.
     pub fn start(prepared: PreparedPlayback) -> Result<Self, Error> {
+        let media_type = prepared.media.media_type().to_owned();
         let report = PlaybackReport {
             classification: prepared.permit.kind(),
             recording_id: prepared.permit.recording_id().to_owned(),
             asset_id: prepared.media.asset_id().to_owned(),
-            media_type: prepared.media.media_type().to_owned(),
+            media_type: media_type.clone(),
             decoded_frames: 0,
             decoded_packets: 0,
         };
+        let mut file = prepared.media.into_file();
+        preflight_device_playback(&mut file, Some(&media_type), DecodeLimits::default())?;
         let (stream, handle) = rodio::OutputStream::try_default()
             .map_err(|error| Error::Decoder(format!("audio output unavailable: {error}")))?;
         let sink = rodio::Sink::try_new(&handle)
             .map_err(|error| Error::Decoder(format!("audio sink unavailable: {error}")))?;
-        let source = rodio::Decoder::new(prepared.media.into_file())
+        let source = rodio::Decoder::new(file)
             .map_err(|error| Error::Decoder(format!("audio decoder: {error}")))?;
         sink.append(source.take_duration(Duration::from_secs(4 * 60 * 60)));
         Ok(Self {
@@ -470,15 +474,49 @@ pub fn decode_headless(
     if !matches!(media_type.as_str(), "audio/wav" | "audio/flac") {
         return Err(Error::Decoder("unsupported codec".into()));
     }
-    let mut file: File = prepared.media.into_file();
+    let summary = decode_file(prepared.media.into_file(), Some(&media_type), limits)?;
+    Ok(PlaybackReport {
+        classification: prepared.permit.kind(),
+        recording_id: prepared.permit.recording_id().to_owned(),
+        asset_id,
+        media_type,
+        decoded_frames: summary.frames,
+        decoded_packets: summary.packets,
+    })
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct DecodeSummary {
+    frames: u64,
+    packets: u64,
+}
+
+fn preflight_device_playback(
+    file: &mut File,
+    media_type: Option<&str>,
+    limits: DecodeLimits,
+) -> Result<DecodeSummary, Error> {
+    let validation = decode_file(file.try_clone()?, media_type, limits);
+    file.rewind()?;
+    validation
+}
+
+fn decode_file(
+    mut file: File,
+    media_type: Option<&str>,
+    limits: DecodeLimits,
+) -> Result<DecodeSummary, Error> {
     file.rewind()?;
     let mss = MediaSourceStream::new(Box::new(file), Default::default());
     let mut hint = Hint::new();
-    hint.with_extension(if media_type == "audio/flac" {
-        "flac"
-    } else {
-        "wav"
-    });
+    if let Some(media_type) = media_type {
+        let extension = match media_type {
+            "audio/flac" => "flac",
+            "audio/wav" => "wav",
+            _ => return Err(Error::Decoder("unsupported codec".into())),
+        };
+        hint.with_extension(extension);
+    }
     let probed = symphonia::default::get_probe()
         .format(
             &hint,
@@ -533,13 +571,9 @@ pub fn decode_headless(
     }
     recovery.record_verification(decoder_impl.finalize().verify_ok);
     recovery.ensure_complete()?;
-    Ok(PlaybackReport {
-        classification: prepared.permit.kind(),
-        recording_id: prepared.permit.recording_id().to_owned(),
-        asset_id,
-        media_type,
-        decoded_frames: frame_budget.decoded,
-        decoded_packets: packet_budget.processed,
+    Ok(DecodeSummary {
+        frames: frame_budget.decoded,
+        packets: packet_budget.processed,
     })
 }
 
@@ -556,11 +590,11 @@ impl From<std::io::Error> for Error {
 #[cfg(test)]
 mod tests {
     use super::{
-        decode_recovery, validate_encoded_packet_size, DecodeRecovery, Error, FrameBudget,
-        PacketBudget, RecoveryState, MAX_ENCODED_PACKET_BYTES, MAX_FRAMES_PER_PACKET,
-        MAX_RESET_EVENTS,
+        decode_recovery, preflight_device_playback, validate_encoded_packet_size, DecodeLimits,
+        DecodeRecovery, Error, FrameBudget, PacketBudget, RecoveryState, MAX_ENCODED_PACKET_BYTES,
+        MAX_FRAMES_PER_PACKET, MAX_RESET_EVENTS,
     };
-    use std::io;
+    use std::{fs::File, io, io::Read, path::PathBuf};
     use symphonia::core::errors::Error as SymphoniaError;
 
     fn process_tracks(track_ids: &[u32], selected_track: u32, limit: u64) -> Result<u64, Error> {
@@ -765,5 +799,39 @@ mod tests {
         let mut unavailable = RecoveryState::default();
         unavailable.record_verification(None);
         unavailable.ensure_complete().unwrap();
+    }
+
+    fn frozen_flac() -> PathBuf {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../omp-spec-v0.2-draft/fixtures/audio/omp-triangle-250ms.flac")
+    }
+
+    #[test]
+    fn device_preflight_uses_hardened_decode_and_rewinds_file() {
+        let mut file = File::open(frozen_flac()).unwrap();
+        let summary =
+            preflight_device_playback(&mut file, Some("audio/flac"), DecodeLimits::default())
+                .unwrap();
+        assert!(summary.frames > 0);
+        assert!(summary.packets > 0);
+
+        let mut magic = [0_u8; 4];
+        file.read_exact(&mut magic).unwrap();
+        assert_eq!(&magic, b"fLaC");
+    }
+
+    #[test]
+    fn device_preflight_enforces_zero_budgets_without_audio_device() {
+        let mut file = File::open(frozen_flac()).unwrap();
+        let error = preflight_device_playback(
+            &mut file,
+            Some("audio/flac"),
+            DecodeLimits {
+                max_frames: 0,
+                max_packets: u64::MAX,
+            },
+        )
+        .unwrap_err();
+        assert!(matches!(error, Error::Decoder(message) if message == "frame limit"));
     }
 }
