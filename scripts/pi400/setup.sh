@@ -22,10 +22,18 @@ fi
 sudo apt-get update
 sudo apt-get install -y --no-install-recommends build-essential pkg-config libasound2-dev libsndfile1 libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev libssl-dev python3 python3-venv git time
 
-if ! command -v rustup >/dev/null 2>&1; then
-  echo "Rust is absent. Install rustup manually from an authenticated source, then rerun." >&2
-  exit 2
+PATH="$HOME/.cargo/bin:$PATH"
+export PATH
+if [ -f "$HOME/.cargo/env" ]; then
+  # shellcheck disable=SC1091 -- this is rustup's per-user environment file
+  . "$HOME/.cargo/env"
 fi
+for tool in rustup cargo rustc; do
+  if ! command -v "$tool" >/dev/null 2>&1; then
+    echo "Rust tool '$tool' is absent. Install rustup manually from an authenticated source, then rerun." >&2
+    exit 2
+  fi
+done
 rustup toolchain install stable --component rustfmt,clippy
 python3 -m venv "$HOME/.venv-omp-validation"
 "$HOME/.venv-omp-validation/bin/python" -m pip install --upgrade pip
