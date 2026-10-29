@@ -55,6 +55,53 @@ struct PacketBudget {
     limit: u64,
 }
 
+// FLAC blocks are limited to 65,535 samples. Symphonia's WAV reader uses much
+// smaller packets (normally 1,152 frames), so this bounds one decode allocation
+// without rejecting valid packets for either supported codec.
+const MAX_FRAMES_PER_PACKET: u64 = 65_536;
+
+#[derive(Debug)]
+struct FrameBudget {
+    decoded: u64,
+    limit: u64,
+}
+
+impl FrameBudget {
+    fn new(limit: u64) -> Self {
+        Self { decoded: 0, limit }
+    }
+
+    fn validate_codec_ceiling(&self, declared_max: Option<u64>) -> Result<(), Error> {
+        if declared_max.is_some_and(|frames| frames > MAX_FRAMES_PER_PACKET) {
+            return Err(Error::Decoder("frame limit".into()));
+        }
+        Ok(())
+    }
+
+    fn before_decode(&self, declared_frames: u64) -> Result<(), Error> {
+        let remaining = self
+            .limit
+            .checked_sub(self.decoded)
+            .ok_or_else(|| Error::Decoder("frame limit".into()))?;
+        if remaining == 0 || declared_frames > remaining || declared_frames > MAX_FRAMES_PER_PACKET
+        {
+            return Err(Error::Decoder("frame limit".into()));
+        }
+        Ok(())
+    }
+
+    fn record_decoded(&mut self, actual_frames: u64) -> Result<(), Error> {
+        self.decoded = self
+            .decoded
+            .checked_add(actual_frames)
+            .ok_or_else(|| Error::Decoder("frame overflow".into()))?;
+        if self.decoded > self.limit || actual_frames > MAX_FRAMES_PER_PACKET {
+            return Err(Error::Decoder("frame limit".into()));
+        }
+        Ok(())
+    }
+}
+
 impl PacketBudget {
     fn new(limit: u64) -> Self {
         Self {
@@ -355,10 +402,12 @@ pub fn decode_headless(
         .default_track()
         .ok_or_else(|| Error::Decoder("no default track".into()))?;
     let track_id = track.id;
+    let max_frames_per_packet = track.codec_params.max_frames_per_packet;
     let mut decoder_impl = symphonia::default::get_codecs()
         .make(&track.codec_params, &DecoderOptions::default())
         .map_err(decoder)?;
-    let mut frames = 0_u64;
+    let mut frame_budget = FrameBudget::new(limits.max_frames);
+    frame_budget.validate_codec_ceiling(max_frames_per_packet)?;
     let mut packet_budget = PacketBudget::new(limits.max_packets);
     loop {
         let packet = match format.next_packet() {
@@ -372,20 +421,16 @@ pub fn decode_headless(
         if packet.track_id() != track_id {
             continue;
         }
+        frame_budget.before_decode(packet.dur())?;
         let decoded = decoder_impl.decode(&packet).map_err(decoder)?;
-        frames = frames
-            .checked_add(decoded.frames() as u64)
-            .ok_or_else(|| Error::Decoder("frame overflow".into()))?;
-        if frames > limits.max_frames {
-            return Err(Error::Decoder("frame limit".into()));
-        }
+        frame_budget.record_decoded(decoded.frames() as u64)?;
     }
     Ok(PlaybackReport {
         classification: prepared.permit.kind(),
         recording_id: prepared.permit.recording_id().to_owned(),
         asset_id,
         media_type,
-        decoded_frames: frames,
+        decoded_frames: frame_budget.decoded,
         decoded_packets: packet_budget.processed,
     })
 }
@@ -402,7 +447,7 @@ impl From<std::io::Error> for Error {
 
 #[cfg(test)]
 mod tests {
-    use super::{Error, PacketBudget};
+    use super::{Error, FrameBudget, PacketBudget, MAX_FRAMES_PER_PACKET};
 
     fn process_tracks(track_ids: &[u32], selected_track: u32, limit: u64) -> Result<u64, Error> {
         let mut budget = PacketBudget::new(limit);
@@ -446,5 +491,63 @@ mod tests {
         };
         let error = budget.consume().unwrap_err();
         assert!(matches!(error, Error::Decoder(message) if message == "packet limit"));
+    }
+
+    #[test]
+    fn zero_frame_budget_rejects_before_decode() {
+        let budget = FrameBudget::new(0);
+        let error = budget.before_decode(1).unwrap_err();
+        assert!(matches!(error, Error::Decoder(message) if message == "frame limit"));
+    }
+
+    #[test]
+    fn frame_budget_accepts_exact_boundary() {
+        let mut budget = FrameBudget::new(4_096);
+        budget.before_decode(4_096).unwrap();
+        budget.record_decoded(4_096).unwrap();
+        assert_eq!(budget.decoded, 4_096);
+    }
+
+    #[test]
+    fn frame_budget_rejects_oversized_packet_declarations() {
+        let budget = FrameBudget::new(MAX_FRAMES_PER_PACKET + 1);
+        let error = budget.before_decode(MAX_FRAMES_PER_PACKET + 1).unwrap_err();
+        assert!(matches!(error, Error::Decoder(message) if message == "frame limit"));
+
+        let error = budget
+            .validate_codec_ceiling(Some(MAX_FRAMES_PER_PACKET + 1))
+            .unwrap_err();
+        assert!(matches!(error, Error::Decoder(message) if message == "frame limit"));
+    }
+
+    #[test]
+    fn frame_budget_enforces_cumulative_actual_frames() {
+        let mut budget = FrameBudget::new(4_096);
+        budget.before_decode(2_048).unwrap();
+        budget.record_decoded(2_048).unwrap();
+        let error = budget.before_decode(2_049).unwrap_err();
+        assert!(matches!(error, Error::Decoder(message) if message == "frame limit"));
+
+        budget.before_decode(2_048).unwrap();
+        budget.record_decoded(2_048).unwrap();
+        assert_eq!(budget.decoded, 4_096);
+    }
+
+    #[test]
+    fn frame_budget_post_decode_check_rejects_underdeclared_packet() {
+        let mut budget = FrameBudget::new(4_096);
+        budget.before_decode(1_024).unwrap();
+        let error = budget.record_decoded(4_097).unwrap_err();
+        assert!(matches!(error, Error::Decoder(message) if message == "frame limit"));
+    }
+
+    #[test]
+    fn frame_budget_rejects_counter_overflow() {
+        let mut budget = FrameBudget {
+            decoded: u64::MAX,
+            limit: u64::MAX,
+        };
+        let error = budget.record_decoded(1).unwrap_err();
+        assert!(matches!(error, Error::Decoder(message) if message == "frame overflow"));
     }
 }
