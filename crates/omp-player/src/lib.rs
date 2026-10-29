@@ -63,6 +63,10 @@ struct PacketBudget {
 // smaller packets (normally 1,152 frames), so this bounds one decode allocation
 // without rejecting valid packets for either supported codec.
 const MAX_FRAMES_PER_PACKET: u64 = 65_536;
+// Symphonia's FLAC parser uses the format's 16 MiB maximum frame size. WAV
+// packets are smaller under the frame ceiling above, so this is a common
+// encoded-packet limit for every supported track.
+const MAX_ENCODED_PACKET_BYTES: u64 = 16 * 1024 * 1024;
 const MAX_RESET_EVENTS: u64 = 64;
 
 #[derive(Debug)]
@@ -157,6 +161,15 @@ fn decode_recovery(error: SymphoniaError) -> Result<DecodeRecovery, Error> {
         SymphoniaError::ResetRequired => Ok(DecodeRecovery::RecreateDecoder),
         error => Err(decoder(error)),
     }
+}
+
+fn validate_encoded_packet_size(encoded_bytes: usize) -> Result<(), Error> {
+    let encoded_bytes =
+        u64::try_from(encoded_bytes).map_err(|_| Error::Decoder("packet size limit".into()))?;
+    if encoded_bytes > MAX_ENCODED_PACKET_BYTES {
+        return Err(Error::Decoder("packet size limit".into()));
+    }
+    Ok(())
 }
 
 fn make_decoder(
@@ -493,6 +506,7 @@ pub fn decode_headless(
             Err(e) => return Err(decoder(e)),
         };
         packet_budget.consume()?;
+        validate_encoded_packet_size(packet.buf().len())?;
         if packet.track_id() != track_id {
             continue;
         }
@@ -542,8 +556,9 @@ impl From<std::io::Error> for Error {
 #[cfg(test)]
 mod tests {
     use super::{
-        decode_recovery, DecodeRecovery, Error, FrameBudget, PacketBudget, RecoveryState,
-        MAX_FRAMES_PER_PACKET, MAX_RESET_EVENTS,
+        decode_recovery, validate_encoded_packet_size, DecodeRecovery, Error, FrameBudget,
+        PacketBudget, RecoveryState, MAX_ENCODED_PACKET_BYTES, MAX_FRAMES_PER_PACKET,
+        MAX_RESET_EVENTS,
     };
     use std::io;
     use symphonia::core::errors::Error as SymphoniaError;
@@ -590,6 +605,30 @@ mod tests {
         };
         let error = budget.consume().unwrap_err();
         assert!(matches!(error, Error::Decoder(message) if message == "packet limit"));
+    }
+
+    #[test]
+    fn encoded_packet_size_accepts_empty_and_exact_limit() {
+        validate_encoded_packet_size(0).unwrap();
+        validate_encoded_packet_size(usize::try_from(MAX_ENCODED_PACKET_BYTES).unwrap()).unwrap();
+    }
+
+    #[test]
+    fn encoded_packet_size_rejects_first_byte_over_limit() {
+        let oversized = MAX_ENCODED_PACKET_BYTES.checked_add(1).unwrap();
+        let error = validate_encoded_packet_size(usize::try_from(oversized).unwrap()).unwrap_err();
+        assert!(matches!(error, Error::Decoder(message) if message == "packet size limit"));
+    }
+
+    #[test]
+    fn oversized_nonselected_packet_still_consumes_packet_budget() {
+        let mut packets = PacketBudget::new(1);
+        packets.consume().unwrap();
+        let oversized = MAX_ENCODED_PACKET_BYTES.checked_add(1).unwrap();
+        let error = validate_encoded_packet_size(usize::try_from(oversized).unwrap()).unwrap_err();
+
+        assert_eq!(packets.processed, 1);
+        assert!(matches!(error, Error::Decoder(message) if message == "packet size limit"));
     }
 
     #[test]
