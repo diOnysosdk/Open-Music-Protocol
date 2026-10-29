@@ -19,8 +19,12 @@ use rodio::Source;
 use std::time::Duration;
 use std::{fs::File, io::Seek};
 use symphonia::core::{
-    codecs::DecoderOptions, errors::Error as SymphoniaError, formats::FormatOptions,
-    io::MediaSourceStream, meta::MetadataOptions, probe::Hint,
+    codecs::{CodecParameters, Decoder, DecoderOptions},
+    errors::Error as SymphoniaError,
+    formats::{FormatOptions, FormatReader},
+    io::MediaSourceStream,
+    meta::MetadataOptions,
+    probe::Hint,
 };
 
 /// W7 pipeline or decoder failure.
@@ -59,6 +63,7 @@ struct PacketBudget {
 // smaller packets (normally 1,152 frames), so this bounds one decode allocation
 // without rejecting valid packets for either supported codec.
 const MAX_FRAMES_PER_PACKET: u64 = 65_536;
+const MAX_RESET_EVENTS: u64 = 64;
 
 #[derive(Debug)]
 struct FrameBudget {
@@ -100,6 +105,78 @@ impl FrameBudget {
         }
         Ok(())
     }
+}
+
+#[derive(Debug, Default)]
+struct RecoveryState {
+    reset_events: u64,
+    damaged: bool,
+}
+
+impl RecoveryState {
+    fn record_reset(&mut self) -> Result<(), Error> {
+        self.reset_events = self
+            .reset_events
+            .checked_add(1)
+            .ok_or_else(|| Error::Decoder("reset limit".into()))?;
+        if self.reset_events > MAX_RESET_EVENTS {
+            return Err(Error::Decoder("reset limit".into()));
+        }
+        Ok(())
+    }
+
+    fn record_damaged_packet(&mut self) {
+        self.damaged = true;
+    }
+
+    fn record_verification(&mut self, verify_ok: Option<bool>) {
+        if verify_ok == Some(false) {
+            self.damaged = true;
+        }
+    }
+
+    fn ensure_complete(&self) -> Result<(), Error> {
+        if self.damaged {
+            return Err(Error::Decoder("incomplete stream".into()));
+        }
+        Ok(())
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum DecodeRecovery {
+    DiscardPacket,
+    RecreateDecoder,
+}
+
+fn decode_recovery(error: SymphoniaError) -> Result<DecodeRecovery, Error> {
+    match error {
+        SymphoniaError::DecodeError(_) | SymphoniaError::IoError(_) => {
+            Ok(DecodeRecovery::DiscardPacket)
+        }
+        SymphoniaError::ResetRequired => Ok(DecodeRecovery::RecreateDecoder),
+        error => Err(decoder(error)),
+    }
+}
+
+fn make_decoder(
+    params: &CodecParameters,
+    frame_budget: &FrameBudget,
+) -> Result<Box<dyn Decoder>, Error> {
+    frame_budget.validate_codec_ceiling(params.max_frames_per_packet)?;
+    symphonia::default::get_codecs()
+        .make(params, &DecoderOptions::default())
+        .map_err(decoder)
+}
+
+fn select_decoder(
+    format: &dyn FormatReader,
+    frame_budget: &FrameBudget,
+) -> Result<(u32, Box<dyn Decoder>), Error> {
+    let track = format
+        .default_track()
+        .ok_or_else(|| Error::Decoder("no default track".into()))?;
+    Ok((track.id, make_decoder(&track.codec_params, frame_budget)?))
 }
 
 impl PacketBudget {
@@ -398,22 +475,20 @@ pub fn decode_headless(
         )
         .map_err(decoder)?;
     let mut format = probed.format;
-    let track = format
-        .default_track()
-        .ok_or_else(|| Error::Decoder("no default track".into()))?;
-    let track_id = track.id;
-    let max_frames_per_packet = track.codec_params.max_frames_per_packet;
-    let mut decoder_impl = symphonia::default::get_codecs()
-        .make(&track.codec_params, &DecoderOptions::default())
-        .map_err(decoder)?;
     let mut frame_budget = FrameBudget::new(limits.max_frames);
-    frame_budget.validate_codec_ceiling(max_frames_per_packet)?;
+    let (mut track_id, mut decoder_impl) = select_decoder(format.as_ref(), &frame_budget)?;
     let mut packet_budget = PacketBudget::new(limits.max_packets);
-    loop {
+    let mut recovery = RecoveryState::default();
+    'decode: loop {
         let packet = match format.next_packet() {
             Ok(v) => v,
             Err(SymphoniaError::IoError(e)) if e.kind() == std::io::ErrorKind::UnexpectedEof => {
-                break
+                break 'decode;
+            }
+            Err(SymphoniaError::ResetRequired) => {
+                recovery.record_reset()?;
+                (track_id, decoder_impl) = select_decoder(format.as_ref(), &frame_budget)?;
+                continue 'decode;
             }
             Err(e) => return Err(decoder(e)),
         };
@@ -422,9 +497,28 @@ pub fn decode_headless(
             continue;
         }
         frame_budget.before_decode(packet.dur())?;
-        let decoded = decoder_impl.decode(&packet).map_err(decoder)?;
-        frame_budget.record_decoded(decoded.frames() as u64)?;
+        loop {
+            match decoder_impl.decode(&packet) {
+                Ok(decoded) => {
+                    frame_budget.record_decoded(decoded.frames() as u64)?;
+                    break;
+                }
+                Err(error) => match decode_recovery(error)? {
+                    DecodeRecovery::DiscardPacket => {
+                        recovery.record_damaged_packet();
+                        break;
+                    }
+                    DecodeRecovery::RecreateDecoder => {
+                        recovery.record_reset()?;
+                        let updated = decoder_impl.codec_params().clone();
+                        decoder_impl = make_decoder(&updated, &frame_budget)?;
+                    }
+                },
+            }
+        }
     }
+    recovery.record_verification(decoder_impl.finalize().verify_ok);
+    recovery.ensure_complete()?;
     Ok(PlaybackReport {
         classification: prepared.permit.kind(),
         recording_id: prepared.permit.recording_id().to_owned(),
@@ -447,7 +541,12 @@ impl From<std::io::Error> for Error {
 
 #[cfg(test)]
 mod tests {
-    use super::{Error, FrameBudget, PacketBudget, MAX_FRAMES_PER_PACKET};
+    use super::{
+        decode_recovery, DecodeRecovery, Error, FrameBudget, PacketBudget, RecoveryState,
+        MAX_FRAMES_PER_PACKET, MAX_RESET_EVENTS,
+    };
+    use std::io;
+    use symphonia::core::errors::Error as SymphoniaError;
 
     fn process_tracks(track_ids: &[u32], selected_track: u32, limit: u64) -> Result<u64, Error> {
         let mut budget = PacketBudget::new(limit);
@@ -549,5 +648,83 @@ mod tests {
         };
         let error = budget.record_decoded(1).unwrap_err();
         assert!(matches!(error, Error::Decoder(message) if message == "frame overflow"));
+    }
+
+    #[test]
+    fn recoverable_packet_errors_are_discarded() {
+        assert_eq!(
+            decode_recovery(SymphoniaError::DecodeError("damaged packet")).unwrap(),
+            DecodeRecovery::DiscardPacket
+        );
+        assert_eq!(
+            decode_recovery(SymphoniaError::IoError(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "damaged packet",
+            )))
+            .unwrap(),
+            DecodeRecovery::DiscardPacket
+        );
+    }
+
+    #[test]
+    fn terminal_decoder_errors_remain_terminal() {
+        let error = decode_recovery(SymphoniaError::LimitError("codec limit")).unwrap_err();
+        assert!(matches!(error, Error::Decoder(message) if message.contains("codec limit")));
+    }
+
+    #[test]
+    fn decoder_reset_requests_recreation() {
+        assert_eq!(
+            decode_recovery(SymphoniaError::ResetRequired).unwrap(),
+            DecodeRecovery::RecreateDecoder
+        );
+    }
+
+    #[test]
+    fn repeated_resets_are_bounded() {
+        let mut recovery = RecoveryState::default();
+        for _ in 0..MAX_RESET_EVENTS {
+            recovery.record_reset().unwrap();
+        }
+        let error = recovery.record_reset().unwrap_err();
+        assert!(matches!(error, Error::Decoder(message) if message == "reset limit"));
+    }
+
+    #[test]
+    fn budgets_remain_monotonic_across_errors_and_resets() {
+        let mut packets = PacketBudget::new(2);
+        let mut frames = FrameBudget::new(1_024);
+        let mut recovery = RecoveryState::default();
+
+        packets.consume().unwrap();
+        recovery.record_damaged_packet();
+        recovery.record_reset().unwrap();
+        packets.consume().unwrap();
+        frames.before_decode(1_024).unwrap();
+        frames.record_decoded(1_024).unwrap();
+
+        assert_eq!(packets.processed, 2);
+        assert_eq!(frames.decoded, 1_024);
+        assert_eq!(recovery.reset_events, 1);
+    }
+
+    #[test]
+    fn damaged_media_cannot_report_successful_completion() {
+        let mut recovery = RecoveryState::default();
+        recovery.record_damaged_packet();
+        let error = recovery.ensure_complete().unwrap_err();
+        assert!(matches!(error, Error::Decoder(message) if message == "incomplete stream"));
+    }
+
+    #[test]
+    fn failed_decoder_verification_cannot_report_successful_completion() {
+        let mut recovery = RecoveryState::default();
+        recovery.record_verification(Some(false));
+        let error = recovery.ensure_complete().unwrap_err();
+        assert!(matches!(error, Error::Decoder(message) if message == "incomplete stream"));
+
+        let mut unavailable = RecoveryState::default();
+        unavailable.record_verification(None);
+        unavailable.ensure_complete().unwrap();
     }
 }
