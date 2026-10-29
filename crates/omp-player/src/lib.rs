@@ -49,6 +49,32 @@ pub struct DecodeLimits {
     pub max_packets: u64,
 }
 
+#[derive(Debug)]
+struct PacketBudget {
+    processed: u64,
+    limit: u64,
+}
+
+impl PacketBudget {
+    fn new(limit: u64) -> Self {
+        Self {
+            processed: 0,
+            limit,
+        }
+    }
+
+    fn consume(&mut self) -> Result<(), Error> {
+        self.processed = self
+            .processed
+            .checked_add(1)
+            .ok_or_else(|| Error::Decoder("packet limit".into()))?;
+        if self.processed > self.limit {
+            return Err(Error::Decoder("packet limit".into()));
+        }
+        Ok(())
+    }
+}
+
 impl Default for DecodeLimits {
     fn default() -> Self {
         Self {
@@ -333,7 +359,7 @@ pub fn decode_headless(
         .make(&track.codec_params, &DecoderOptions::default())
         .map_err(decoder)?;
     let mut frames = 0_u64;
-    let mut packets = 0_u64;
+    let mut packet_budget = PacketBudget::new(limits.max_packets);
     loop {
         let packet = match format.next_packet() {
             Ok(v) => v,
@@ -342,12 +368,9 @@ pub fn decode_headless(
             }
             Err(e) => return Err(decoder(e)),
         };
+        packet_budget.consume()?;
         if packet.track_id() != track_id {
             continue;
-        }
-        packets += 1;
-        if packets > limits.max_packets {
-            return Err(Error::Decoder("packet limit".into()));
         }
         let decoded = decoder_impl.decode(&packet).map_err(decoder)?;
         frames = frames
@@ -363,7 +386,7 @@ pub fn decode_headless(
         asset_id,
         media_type,
         decoded_frames: frames,
-        decoded_packets: packets,
+        decoded_packets: packet_budget.processed,
     })
 }
 
@@ -374,5 +397,54 @@ fn decoder(error: SymphoniaError) -> Error {
 impl From<std::io::Error> for Error {
     fn from(value: std::io::Error) -> Self {
         Self::Decoder(value.to_string())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Error, PacketBudget};
+
+    fn process_tracks(track_ids: &[u32], selected_track: u32, limit: u64) -> Result<u64, Error> {
+        let mut budget = PacketBudget::new(limit);
+        for &track_id in track_ids {
+            budget.consume()?;
+            if track_id != selected_track {
+                continue;
+            }
+        }
+        Ok(budget.processed)
+    }
+
+    #[test]
+    fn packet_budget_counts_packets_from_every_track() {
+        let error = process_tracks(&[2, 2, 1], 1, 2).unwrap_err();
+        assert!(matches!(error, Error::Decoder(message) if message == "packet limit"));
+    }
+
+    #[test]
+    fn packet_budget_rejects_first_packet_when_zero() {
+        let error = process_tracks(&[1], 1, 0).unwrap_err();
+        assert!(matches!(error, Error::Decoder(message) if message == "packet limit"));
+    }
+
+    #[test]
+    fn packet_budget_accepts_exact_limit() {
+        assert_eq!(process_tracks(&[2, 1, 2], 1, 3).unwrap(), 3);
+    }
+
+    #[test]
+    fn packet_budget_rejects_packet_after_exact_limit() {
+        let error = process_tracks(&[2, 1, 2, 1], 1, 3).unwrap_err();
+        assert!(matches!(error, Error::Decoder(message) if message == "packet limit"));
+    }
+
+    #[test]
+    fn packet_budget_rejects_counter_overflow() {
+        let mut budget = PacketBudget {
+            processed: u64::MAX,
+            limit: u64::MAX,
+        };
+        let error = budget.consume().unwrap_err();
+        assert!(matches!(error, Error::Decoder(message) if message == "packet limit"));
     }
 }
