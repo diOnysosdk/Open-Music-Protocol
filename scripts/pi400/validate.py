@@ -16,7 +16,8 @@ import sys
 import time
 
 TIMEOUT_SECONDS = 45 * 60
-REQUIRED_TOOLS = ("git", "cargo", "rustc", "python3", "pkg-config", "timeout")
+REQUIRED_TOOLS = ("git", "cargo", "rustc", "pkg-config", "timeout")
+REQUIRED_PYTHON_MODULES = ("pytest", "jsonschema", "rfc8785", "cryptography", "soundfile")
 
 
 def utc_now() -> str:
@@ -67,6 +68,7 @@ def main() -> int:
         "memory": capture(["free", "-h"]),
         "filesystem": capture(["df", "-h", str(root)]),
         "audio_devices": capture(["aplay", "-l"]),
+        "validation_python": sys.executable,
     }
     checks: list[dict[str, object]] = []
 
@@ -81,6 +83,21 @@ def main() -> int:
     is_pi400 = "raspberry pi 400" in model.lower()
     static_check("native-arm64", True, is_arm64, f"architecture={arch}, userspace={bits}")
     static_check("raspberry-pi-400", True, is_pi400, f"hardware_model={model}")
+    expected_python = Path.home() / ".venv-omp-validation" / "bin" / "python"
+    selected_python = Path(sys.executable).absolute()
+    venv_ok = selected_python == expected_python.absolute()
+    static_check("python-interpreter", True, venv_ok,
+                 f"selected={selected_python}; required={expected_python}")
+    dependency_probe = subprocess.run(
+        [sys.executable, "-c", "; ".join(f"import {module}" for module in REQUIRED_PYTHON_MODULES)],
+        text=True, capture_output=True, check=False,
+    )
+    python_deps_ok = dependency_probe.returncode == 0
+    dependency_diagnostic = (
+        f"interpreter={sys.executable}; modules={','.join(REQUIRED_PYTHON_MODULES)}"
+        if python_deps_ok else dependency_probe.stderr.strip() or "Python dependency probe failed"
+    )
+    static_check("python-dependencies", True, python_deps_ok, dependency_diagnostic)
     missing = [tool for tool in REQUIRED_TOOLS if shutil.which(tool) is None]
     alsa = capture(["pkg-config", "--modversion", "alsa"]) if not missing else "unavailable"
     sndfile = capture(["pkg-config", "--modversion", "sndfile"]) if not missing else "unavailable"
@@ -114,7 +131,7 @@ def main() -> int:
                        "diagnostic": diagnostic, "command": command,
                        "log": str(log_path.relative_to(output))})
 
-    prerequisites = is_arm64 and is_pi400 and deps_ok
+    prerequisites = is_arm64 and is_pi400 and venv_ok and python_deps_ok and deps_ok
     commands = [
         ("workspace-build", ["cargo", "build", "--locked", "--workspace"]),
         ("workspace-tests", ["cargo", "test", "--locked", "--workspace"]),
