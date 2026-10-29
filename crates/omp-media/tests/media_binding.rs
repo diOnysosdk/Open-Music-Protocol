@@ -353,6 +353,17 @@ fn wav_chunk_structure_is_validated_before_decode() {
         ),
         Err(Error::ResourceLimit)
     ));
+
+    let mut oversized_packet = minimal_wav(&[], false);
+    oversized_packet[32..34].copy_from_slice(&u16::MAX.to_le_bytes());
+    assert!(matches!(
+        omp_media::validate_container_structure(
+            &mut std::io::Cursor::new(&oversized_packet),
+            "audio/wav",
+            oversized_packet.len() as u64,
+        ),
+        Err(Error::ResourceLimit)
+    ));
 }
 
 #[test]

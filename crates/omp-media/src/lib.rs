@@ -20,6 +20,10 @@ use std::{
 const MAX_CONTAINER_CHUNKS: u64 = 1_024;
 const MAX_CONTAINER_METADATA_BYTES: u64 = 64 * 1024 * 1024;
 const MAX_WAV_FMT_BYTES: u64 = 64 * 1024;
+const MAX_ENCODED_PACKET_BYTES: u64 = 16 * 1024 * 1024;
+// Symphonia 0.5.5's RIFF reader groups at most 1,152 unblocked PCM
+// frames into one packet.
+const WAV_FRAMES_PER_PACKET: u64 = 1_152;
 
 /// W5 validation or media-binding failure.
 #[derive(Debug, thiserror::Error)]
@@ -353,6 +357,12 @@ fn validate_wav_structure<R: Read + Seek>(reader: &mut R, size: u64) -> Result<(
                     || (encoding == 0xfffe && length < 40)
                 {
                     return Err(Error::MediaTypeInvalid);
+                }
+                let maximum_packet_bytes = u64::from(block_align)
+                    .checked_mul(WAV_FRAMES_PER_PACKET)
+                    .ok_or(Error::ResourceLimit)?;
+                if maximum_packet_bytes > MAX_ENCODED_PACKET_BYTES {
+                    return Err(Error::ResourceLimit);
                 }
                 found_format = true;
             }
